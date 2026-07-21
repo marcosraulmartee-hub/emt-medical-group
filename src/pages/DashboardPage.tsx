@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { CalendarCheck, CloudRain, DollarSign, Layers, Sun, Users, Activity, CloudFog, CloudLightning, Cloud } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { CalendarCheck, CloudRain, DollarSign, Layers, Sun, Users, Activity, CloudFog, CloudLightning, Cloud, AlertTriangle } from 'lucide-react'
 import { AppShell } from '../components/layout/AppShell'
 import { StatTile } from '../components/dashboard/StatTile'
 import { TodayAgenda } from '../components/dashboard/TodayAgenda'
@@ -16,6 +17,7 @@ import type { Invoice } from '../services/invoices'
 import { listInvoicesInRange } from '../services/invoices'
 import { getUsdToDopRate, type ExchangeRate } from '../services/exchangeRate'
 import { getTodayWeather, type WeatherInfo } from '../services/weather'
+import { listPatientsNeedingFollowUp } from '../services/followUp'
 import { addDays, formatDayLabel, toISODate } from '../utils/dates'
 
 const WEATHER_ICON = { clear: Sun, cloudy: Cloud, rain: CloudRain, storm: CloudLightning, fog: CloudFog }
@@ -31,6 +33,7 @@ export function DashboardPage() {
   const [invoicesThisMonth, setInvoicesThisMonth] = useState<Invoice[]>([])
   const [exchangeRate, setExchangeRate] = useState<ExchangeRate | null>(null)
   const [weather, setWeather] = useState<WeatherInfo | null>(null)
+  const [followUpCount, setFollowUpCount] = useState<number | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -42,7 +45,14 @@ export function DashboardPage() {
 
       const tasks: Promise<void>[] = [getUsdToDopRate().then(setExchangeRate), getTodayWeather().then(setWeather)]
 
-      if (can('patients.view')) tasks.push(countPatients().then(setPatientsTotal).catch(() => setPatientsTotal(null)))
+      if (can('patients.view')) {
+        tasks.push(countPatients().then(setPatientsTotal).catch(() => setPatientsTotal(null)))
+        tasks.push(
+          listPatientsNeedingFollowUp()
+            .then((list) => setFollowUpCount(list.length))
+            .catch(() => setFollowUpCount(null)),
+        )
+      }
       if (can('sessions.view')) {
         tasks.push(countActiveCycles().then(setActiveCycles).catch(() => setActiveCycles(null)))
         tasks.push(listSessionsInRange(twoWeeksAgo, todayISO).then(setSessionsTrend).catch(() => setSessionsTrend([])))
@@ -90,6 +100,19 @@ export function DashboardPage() {
           <h2 className="text-xl font-semibold text-midnight-900">Hola, equipo EMT</h2>
           <p className="text-sm text-slate-500">Este es el resumen operativo de EMT Medical Group.</p>
         </div>
+
+        {can('patients.view') && !loading && !!followUpCount && followUpCount > 0 && (
+          <Link
+            to="/patients?followup=true"
+            className="flex items-center gap-3 rounded-3xl bg-amber-50 p-4 text-amber-800 shadow-card transition hover:bg-amber-100"
+          >
+            <AlertTriangle size={20} className="shrink-0" />
+            <p className="text-sm font-medium">
+              {followUpCount} paciente{followUpCount === 1 ? '' : 's'} sin cita hace 30+ días — clic para ver el listado y enviar
+              recordatorio.
+            </p>
+          </Link>
+        )}
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {can('patients.view') && (

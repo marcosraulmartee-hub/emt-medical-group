@@ -19,11 +19,14 @@ export interface Patient {
   emergency_contact_phone: string | null
   referred_by: string | null
   insurance_provider: string | null
+  status: 'active' | 'discharged'
+  discharged_at: string | null
+  discharge_notes: string | null
   created_at: string
   updated_at: string
 }
 
-const PATIENT_SELECT = `id, full_name, email, phone, birth_date, gender, medical_record, national_id, address, city, occupation, education_level, marital_status, emergency_contact_name, emergency_contact_phone, referred_by, insurance_provider, created_at, updated_at`
+const PATIENT_SELECT = `id, full_name, email, phone, birth_date, gender, medical_record, national_id, address, city, occupation, education_level, marital_status, emergency_contact_name, emergency_contact_phone, referred_by, insurance_provider, status, discharged_at, discharge_notes, created_at, updated_at`
 
 export async function listPatients() {
   const { data, error } = await supabase.from('patients').select(PATIENT_SELECT).order('full_name')
@@ -43,7 +46,9 @@ export async function getPatient(id: string) {
   return data as Patient
 }
 
-export async function createPatient(payload: Omit<Patient, 'id' | 'created_at' | 'updated_at'>) {
+export async function createPatient(
+  payload: Omit<Patient, 'id' | 'created_at' | 'updated_at' | 'status' | 'discharged_at' | 'discharge_notes'>,
+) {
   const { data, error } = await supabase.from('patients').insert(payload).select(PATIENT_SELECT).single()
   if (error) throw error
   void logAudit('create', 'patient', data.id, { full_name: data.full_name })
@@ -54,5 +59,33 @@ export async function updatePatient(id: string, patch: Partial<Omit<Patient, 'id
   const { data, error } = await supabase.from('patients').update(patch).eq('id', id).select(PATIENT_SELECT).single()
   if (error) throw error
   void logAudit('update', 'patient', id, patch)
+  return data as Patient
+}
+
+export async function dischargePatient(id: string, notes: string) {
+  const { data, error } = await supabase
+    .from('patients')
+    .update({
+      status: 'discharged',
+      discharged_at: new Date().toISOString().slice(0, 10),
+      discharge_notes: notes || null,
+    })
+    .eq('id', id)
+    .select(PATIENT_SELECT)
+    .single()
+  if (error) throw error
+  void logAudit('discharge', 'patient', id, { notes })
+  return data as Patient
+}
+
+export async function reactivatePatient(id: string) {
+  const { data, error } = await supabase
+    .from('patients')
+    .update({ status: 'active', discharged_at: null, discharge_notes: null })
+    .eq('id', id)
+    .select(PATIENT_SELECT)
+    .single()
+  if (error) throw error
+  void logAudit('reactivate', 'patient', id, {})
   return data as Patient
 }

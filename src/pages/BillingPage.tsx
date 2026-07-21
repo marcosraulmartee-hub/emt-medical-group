@@ -9,6 +9,7 @@ import { listInvoices } from '../services/invoices'
 import { InvoiceFormModal } from './billing/InvoiceFormModal'
 import { InvoiceDetailModal } from './billing/InvoiceDetailModal'
 import { CashClosingSection } from './billing/CashClosingSection'
+import { BudgetsSection } from './billing/BudgetsSection'
 
 const STATUS_LABEL: Record<InvoiceStatus, string> = {
   draft: 'Borrador',
@@ -24,7 +25,7 @@ const STATUS_TONE: Record<InvoiceStatus, 'neutral' | 'success' | 'warning' | 'da
   cancelled: 'danger',
 }
 
-type Tab = 'invoices' | 'closing'
+type Tab = 'invoices' | 'closing' | 'budgets'
 
 export function BillingPage() {
   const [tab, setTab] = useState<Tab>('invoices')
@@ -112,10 +113,21 @@ export function BillingPage() {
           >
             Cuadre del día
           </button>
+          <button
+            onClick={() => setTab('budgets')}
+            className={
+              'rounded-xl px-4 py-2 text-sm font-medium transition ' +
+              (tab === 'budgets' ? 'bg-teal-500 text-white' : 'text-slate-600 hover:bg-slate-100')
+            }
+          >
+            Presupuestos
+          </button>
         </div>
 
         {tab === 'closing' ? (
           <CashClosingSection />
+        ) : tab === 'budgets' ? (
+          <BudgetsSection />
         ) : (
           <div className="overflow-hidden rounded-3xl bg-white shadow-card">
             {loading ? (

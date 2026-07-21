@@ -1,25 +1,41 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { AppShell } from '../components/layout/AppShell'
 import { Button } from '../components/ui/Button'
 import { Table } from '../components/ui/Table'
 import { Input } from '../components/ui/Input'
+import { Badge } from '../components/ui/Badge'
 import { PatientCreateModal } from '../components/patients/PatientCreateModal'
 import type { Patient } from '../services/patients'
 import { listPatients } from '../services/patients'
+import type { FollowUpPatient } from '../services/followUp'
+import { listPatientsNeedingFollowUp } from '../services/followUp'
+import { buildMailtoUrl, buildWhatsAppShareUrl, openShareWindow } from '../utils/share'
+
+function reminderMessage(name: string) {
+  return `Hola ${name}, te escribimos de EMT Medical Group — hace tiempo no te vemos por la clínica. ¿Deseas agendar tu próxima sesión de tratamiento?`
+}
 
 export function PatientsPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [patients, setPatients] = useState<Patient[]>([])
+  const [followUp, setFollowUp] = useState<FollowUpPatient[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
+  const [showDischarged, setShowDischarged] = useState(false)
+  const [followUpOnly, setFollowUpOnly] = useState(
+    () => new URLSearchParams(location.search).get('followup') === 'true',
+  )
 
   async function load() {
     setLoading(true)
     try {
-      setPatients(await listPatients())
+      const [p, f] = await Promise.all([listPatients(), listPatientsNeedingFollowUp()])
+      setPatients(p)
+      setFollowUp(f)
     } catch {
       setError('No se pudieron cargar los pacientes.')
     } finally {
@@ -31,13 +47,27 @@ export function PatientsPage() {
     void load()
   }, [])
 
+  const followUpIds = useMemo(() => new Set(followUp.map((f) => f.id)), [followUp])
+  const followUpDays = useMemo(() => new Map(followUp.map((f) => [f.id, f.days_since])), [followUp])
+
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase()
-    if (!term) return patients
-    return patients.filter(
-      (p) => p.full_name.toLowerCase().includes(term) || (p.email ?? '').toLowerCase().includes(term),
-    )
-  }, [search, patients])
+    return patients.filter((p) => {
+      if (!showDischarged && p.status === 'discharged') return false
+      if (followUpOnly && !followUpIds.has(p.id)) return false
+      if (term && !(p.full_name.toLowerCase().includes(term) || (p.email ?? '').toLowerCase().includes(term))) return false
+      return true
+    })
+  }, [search, patients, showDischarged, followUpOnly, followUpIds])
+
+  function sendReminder(patient: Patient, channel: 'whatsapp' | 'email') {
+    const message = reminderMessage(patient.full_name)
+    if (channel === 'whatsapp') {
+      openShareWindow(buildWhatsAppShareUrl(patient.phone, message))
+    } else {
+      openShareWindow(buildMailtoUrl(patient.email, 'EMT Medical Group — seguimiento de tratamiento', message))
+    }
+  }
 
   return (
     <AppShell title="Pacientes">
@@ -50,12 +80,27 @@ export function PatientsPage() {
           <Button onClick={() => setModalOpen(true)}>Nueva ficha</Button>
         </div>
 
-        <Input
-          placeholder="Buscar por nombre o email..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="sm:max-w-sm"
-        />
+        <div className="flex flex-wrap items-center gap-3">
+          <Input
+            placeholder="Buscar por nombre o email..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="sm:max-w-sm"
+          />
+          <button
+            onClick={() => setFollowUpOnly((v) => !v)}
+            className={
+              'rounded-2xl px-4 py-2.5 text-sm font-medium transition ' +
+              (followUpOnly ? 'bg-amber-500 text-white' : 'bg-white text-slate-600 shadow-card hover:bg-slate-50')
+            }
+          >
+            Seguimiento (30+ días) · {followUp.length}
+          </button>
+          <label className="flex items-center gap-2 text-sm text-slate-500">
+            <input type="checkbox" checked={showDischarged} onChange={(e) => setShowDischarged(e.target.checked)} />
+            Incluir dados de alta
+          </label>
+        </div>
 
         <div className="overflow-hidden rounded-3xl bg-white shadow-card">
           {loading ? (
@@ -63,22 +108,46 @@ export function PatientsPage() {
           ) : error ? (
             <div className="p-6 text-red-600">{error}</div>
           ) : filtered.length === 0 ? (
-            <div className="p-6 text-slate-500">No hay pacientes registrados.</div>
+            <div className="p-6 text-slate-500">No hay pacientes que coincidan con el filtro.</div>
           ) : (
             <div className="overflow-x-auto">
               <Table
-                headers={['Nombre', 'Email', 'Teléfono', 'Fecha de nacimiento', '']}
+                headers={['Nombre', 'Email', 'Teléfono', 'Estado', 'Sin contacto hace', 'Acciones']}
                 rows={filtered.map((patient) => (
-                  <tr
-                    key={patient.id}
-                    className="cursor-pointer hover:bg-slate-50"
-                    onClick={() => navigate(`/patients/${patient.id}`)}
-                  >
-                    <td className="px-4 py-4 text-slate-700">{patient.full_name}</td>
+                  <tr key={patient.id} className="hover:bg-slate-50">
+                    <td className="cursor-pointer px-4 py-4 text-slate-700" onClick={() => navigate(`/patients/${patient.id}`)}>
+                      {patient.full_name}
+                    </td>
                     <td className="px-4 py-4 text-slate-500">{patient.email || '—'}</td>
                     <td className="px-4 py-4 text-slate-500">{patient.phone || '—'}</td>
-                    <td className="px-4 py-4 text-slate-500">{patient.birth_date || '—'}</td>
-                    <td className="px-4 py-4 text-teal-600">Ver ficha</td>
+                    <td className="px-4 py-4">
+                      <Badge tone={patient.status === 'discharged' ? 'neutral' : 'success'}>
+                        {patient.status === 'discharged' ? 'Dado de alta' : 'Activo'}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-4 text-slate-500">
+                      {followUpDays.has(patient.id) ? `${followUpDays.get(patient.id)} días` : '—'}
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-3">
+                        <button className="text-sm text-teal-600 hover:underline" onClick={() => navigate(`/patients/${patient.id}`)}>
+                          Ver ficha
+                        </button>
+                        {followUpIds.has(patient.id) && (
+                          <>
+                            <button
+                              className="text-xs text-slate-500 hover:underline"
+                              onClick={() => sendReminder(patient, 'whatsapp')}
+                            >
+                              WhatsApp
+                            </button>
+                            <button className="text-xs text-slate-500 hover:underline" onClick={() => sendReminder(patient, 'email')}>
+                              Correo
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
                   </tr>
                 ))}
               />

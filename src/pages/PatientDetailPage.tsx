@@ -16,6 +16,7 @@ import { ScalesSection } from './patient-detail/ScalesSection'
 import { AdverseEventsSection } from './patient-detail/AdverseEventsSection'
 import { PackagesSection } from './patient-detail/PackagesSection'
 import { ResearchSection } from './patient-detail/ResearchSection'
+import { DischargeControl } from './patient-detail/DischargeControl'
 
 const TABS = [
   { key: 'general', label: 'Datos generales' },
@@ -71,6 +72,8 @@ export function PatientDetailPage() {
               <h2 className="text-xl font-semibold text-midnight-950">{patient.full_name}</h2>
               <p className="text-sm text-slate-500">Ficha clínica y administrativa</p>
             </div>
+
+            <DischargeControl patient={patient} onUpdated={setPatient} />
 
             <div className="flex flex-wrap gap-2 rounded-2xl bg-white p-1.5 shadow-card">
               {TABS.map((t) => (

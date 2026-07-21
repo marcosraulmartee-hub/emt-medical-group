@@ -61,12 +61,41 @@ persona que retome el proyecto entienda las restricciones reales del negocio.
 - El Dashboard muestra la tasa USD → RD$ como referencia (fetch en vivo a
   `open.er-api.com`, sin API key). Es informativa — la facturación sigue en RD$, no se
   usa para convertir montos automáticamente.
+- Facturación → pestaña "Presupuestos" (Migración 015, tablas `budgets`/`budget_items`):
+  propuesta de costo de un ciclo TMS (ej. 30 sesiones × RD$8,500) para descargar en PDF
+  y enviar al paciente antes de que decida iniciar tratamiento. No es un comprobante
+  fiscal (no lleva NCF, el PDF lo aclara explícitamente). Estados: borrador → enviado →
+  aceptado/rechazado/vencido. Un presupuesto aceptado tiene botón "Convertir en factura
+  (borrador)" que crea la factura real en la pestaña Facturas usando los mismos ítems.
 - Facturación → pestaña "Cuadre del día" (Migración 013, tabla `cash_closings`):
   agrupa los pagos del día por método (efectivo/tarjeta/transferencia/otro), lo
   facturado y permite ingresar el conteo físico de efectivo para ver la diferencia
   contra el sistema. "Guardar cuadre" deja un registro inmutable (sin update/delete
   a nivel de RLS, igual que las facturas emitidas) con quién lo cerró — visible para
   admin, recepcionista y contable.
+
+## Alta de paciente y seguimiento
+
+Migración 016. `patients.status` ('active' | 'discharged') + `discharged_at` + `discharge_notes`.
+
+- Ficha del paciente: control "Dar de alta" siempre disponible (decisión manual del
+  médico), pero se resalta con un aviso verde cuando el ciclo de tratamiento activo
+  llega a su número de sesiones planificadas. "Reactivar paciente" deshace el alta en
+  cualquier momento.
+- Pacientes → filtro "Seguimiento (30+ días)": pacientes activos (no dados de alta)
+  cuya última cita o sesión fue hace 30+ días (o que nunca tuvieron una, contando desde
+  su registro) — calculado en el cliente en `src/services/followUp.ts`. Por defecto la
+  lista oculta a los pacientes dados de alta (checkbox "Incluir dados de alta" para
+  mostrarlos).
+- Dashboard: banner de aviso si hay pacientes en seguimiento, enlaza a
+  `/patients?followup=true`.
+- Envío de PDF (consentimiento/presupuesto) y recordatorios (seguimiento): botones
+  "WhatsApp"/"Correo" que descargan el PDF y abren `wa.me`/`mailto:` con un mensaje
+  prellenado — el navegador no permite adjuntar archivos generados client-side a esos
+  links, así que el staff adjunta el PDF manualmente en la ventana que se abre. Envío
+  automático real (sin intervención manual) requeriría integrar un proveedor de correo
+  transaccional (ej. Resend) vía Edge Function — queda pendiente si se decide invertir
+  en esa integración.
 
 ## Investigación clínica
 

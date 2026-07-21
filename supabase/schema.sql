@@ -1352,3 +1352,82 @@ end $$;
 insert into public.clinical_scales (code, label, description) values
   ('cssrs', 'C-SSRS', 'Columbia-Suicide Severity Rating Scale — riesgo e ideación suicida')
 on conflict (code) do nothing;
+
+-- =====================================================================
+-- MIGRACIÓN 015 — Presupuestos (Facturación → Presupuestos).
+-- Un ciclo TMS típico son 20-36 sesiones; antes de que el paciente decida
+-- iniciar, se le entrega un presupuesto en PDF. No es un comprobante
+-- fiscal (no lleva NCF, no pasa por ncf_sequences) — es una propuesta de
+-- costo editable que, una vez aceptada, se puede convertir en factura
+-- borrador real desde Facturación.
+-- Ejecutar este bloque completo en el SQL Editor de Supabase.
+-- =====================================================================
+
+create table if not exists public.budgets (
+  id uuid primary key default gen_random_uuid(),
+  patient_id uuid not null references public.patients(id) on delete cascade,
+  protocol_id uuid references public.protocols(id) on delete set null,
+  status text not null default 'draft', -- draft | sent | accepted | rejected | expired
+  valid_until date,
+  subtotal numeric not null default 0,
+  discount_amount numeric not null default 0,
+  total numeric not null default 0,
+  notes text,
+  created_by uuid references auth.users(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+drop trigger if exists trg_budgets_updated_at on public.budgets;
+create trigger trg_budgets_updated_at
+  before update on public.budgets
+  for each row execute function public.set_updated_at();
+
+create table if not exists public.budget_items (
+  id uuid primary key default gen_random_uuid(),
+  budget_id uuid not null references public.budgets(id) on delete cascade,
+  description text not null,
+  quantity numeric not null default 1,
+  unit_price numeric not null default 0,
+  amount numeric not null default 0,
+  created_at timestamptz not null default now()
+);
+
+alter table public.budgets enable row level security;
+alter table public.budget_items enable row level security;
+
+-- admin, médico y recepcionista arman/proponen presupuestos; contable solo
+-- lee (mismo criterio que facturas — visibilidad fiscal sin edición).
+drop policy if exists budgets_select on public.budgets;
+create policy budgets_select on public.budgets for select
+  using (public.current_app_role() in ('admin', 'medico', 'recepcionista', 'contable'));
+drop policy if exists budgets_write on public.budgets;
+create policy budgets_write on public.budgets for all
+  using (public.current_app_role() in ('admin', 'medico', 'recepcionista'))
+  with check (public.current_app_role() in ('admin', 'medico', 'recepcionista'));
+
+drop policy if exists budget_items_select on public.budget_items;
+create policy budget_items_select on public.budget_items for select
+  using (public.current_app_role() in ('admin', 'medico', 'recepcionista', 'contable'));
+drop policy if exists budget_items_write on public.budget_items;
+create policy budget_items_write on public.budget_items for all
+  using (public.current_app_role() in ('admin', 'medico', 'recepcionista'))
+  with check (public.current_app_role() in ('admin', 'medico', 'recepcionista'));
+
+-- =====================================================================
+-- MIGRACIÓN 016 — Alta de paciente al terminar el plan de tratamiento.
+-- No hay política de RLS nueva: patients_all ("for all") ya cubre estas
+-- columnas para admin/médico/técnico/recepcionista.
+-- Ejecutar este bloque completo en el SQL Editor de Supabase.
+-- =====================================================================
+
+alter table public.patients add column if not exists status text not null default 'active'; -- active | discharged
+alter table public.patients add column if not exists discharged_at date;
+alter table public.patients add column if not exists discharge_notes text;
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'patients_status_check') then
+    alter table public.patients add constraint patients_status_check check (status in ('active', 'discharged'));
+  end if;
+end $$;
