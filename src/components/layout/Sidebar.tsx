@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Layers,
   MapPin,
+  Receipt,
   Settings,
   ShieldCheck,
   Users,
@@ -15,6 +16,7 @@ import type { LucideIcon } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { ROLE_LABELS } from '../../types/auth'
 import { initials } from '../../utils/format'
+import { Logo } from '../Logo'
 
 interface NavItem {
   to: string
@@ -39,6 +41,7 @@ const groups: { title: string; items: NavItem[] }[] = [
     title: 'Análisis',
     items: [
       { to: '/research', label: 'Investigación', icon: ChartBar, perm: 'research.view' },
+      { to: '/billing', label: 'Facturación', icon: Receipt, perm: 'billing.view' },
       { to: '/reports', label: 'Reportes', icon: ShieldCheck, perm: 'reports.view' },
     ],
   },
@@ -61,13 +64,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <div className="flex h-full flex-col bg-white border-r border-gray-200 text-midnight-950">
       <div className="flex items-center gap-3 px-5 py-5">
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-teal-500 text-lg font-semibold text-white">
-          EMT
-        </div>
-        <div>
-          <p className="text-sm font-semibold">EMT Clinic</p>
-          <p className="text-xs text-slate-500">Neuromodulación clínica</p>
-        </div>
+        <Logo variant="full" />
       </div>
 
       <div className="px-3 pb-4">

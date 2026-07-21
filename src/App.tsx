@@ -15,6 +15,7 @@ import { PatientDetailPage } from './pages/PatientDetailPage'
 import { ProtocolsPage } from './pages/ProtocolsPage'
 import { ConsentPage } from './pages/ConsentPage'
 import { SessionsPage } from './pages/SessionsPage'
+import { BillingPage } from './pages/BillingPage'
 import { ResearchPage } from './pages/ResearchPage'
 import { ReportsPage } from './pages/ReportsPage'
 import { SettingsPage } from './pages/SettingsPage'
@@ -53,6 +54,9 @@ export default function App() {
             </Route>
             <Route element={<PermissionRoute perm="research.view" />}>
               <Route path="/research" element={<ResearchPage />} />
+            </Route>
+            <Route element={<PermissionRoute perm="billing.view" />}>
+              <Route path="/billing" element={<BillingPage />} />
             </Route>
             <Route element={<PermissionRoute perm="reports.view" />}>
               <Route path="/reports" element={<ReportsPage />} />

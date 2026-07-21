@@ -1,4 +1,4 @@
-export type AppRole = 'admin' | 'clinician' | 'technician' | 'reception'
+export type AppRole = 'admin' | 'medico' | 'tecnico' | 'recepcionista' | 'contable' | 'paciente'
 
 export interface Profile {
   id: string
@@ -11,7 +11,11 @@ export interface Profile {
 
 export const ROLE_LABELS: Record<AppRole, string> = {
   admin: 'Administrador',
-  clinician: 'Clínico',
-  technician: 'Técnico',
-  reception: 'Recepción',
+  medico: 'Médico',
+  tecnico: 'Técnico',
+  recepcionista: 'Recepcionista',
+  contable: 'Contable',
+  paciente: 'Paciente',
 }
+
+export const STAFF_ROLES: AppRole[] = ['admin', 'medico', 'tecnico', 'recepcionista', 'contable']

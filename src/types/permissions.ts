@@ -6,6 +6,7 @@ export const ALL_PERMISSIONS: string[] = [
   'consents.view',
   'sessions.view',
   'research.view',
+  'billing.view',
   'reports.view',
   'settings.view',
   'audit.view',
@@ -13,7 +14,7 @@ export const ALL_PERMISSIONS: string[] = [
 
 export const ROLE_MATRIX: Record<string, string[]> = {
   admin: ALL_PERMISSIONS,
-  clinician: [
+  medico: [
     'dashboard.view',
     'agenda.view',
     'patients.view',
@@ -22,18 +23,25 @@ export const ROLE_MATRIX: Record<string, string[]> = {
     'sessions.view',
     'research.view',
   ],
-  technician: [
+  tecnico: [
     'dashboard.view',
     'agenda.view',
     'protocols.view',
     'sessions.view',
   ],
-  reception: [
+  recepcionista: [
     'dashboard.view',
     'agenda.view',
     'patients.view',
     'consents.view',
+    'billing.view',
   ],
+  contable: [
+    'dashboard.view',
+    'billing.view',
+    'reports.view',
+  ],
+  paciente: [],
 }
 
 export const MODULE_ROUTES: { path: string; perm: string }[] = [
@@ -44,6 +52,7 @@ export const MODULE_ROUTES: { path: string; perm: string }[] = [
   { path: '/consents', perm: 'consents.view' },
   { path: '/sessions', perm: 'sessions.view' },
   { path: '/research', perm: 'research.view' },
+  { path: '/billing', perm: 'billing.view' },
   { path: '/reports', perm: 'reports.view' },
   { path: '/settings', perm: 'settings.view' },
   { path: '/audit', perm: 'audit.view' },

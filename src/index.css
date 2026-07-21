@@ -10,6 +10,13 @@ body {
   @apply box-border;
 }
 
+h1,
+h2,
+h3,
+h4 {
+  @apply font-display;
+}
+
 ::selection {
   @apply bg-teal-200 text-ink;
 }

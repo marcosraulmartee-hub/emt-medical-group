@@ -1,29 +1,35 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { AppShell } from '../components/layout/AppShell'
 import { Button } from '../components/ui/Button'
 import { Table } from '../components/ui/Table'
+import { Badge } from '../components/ui/Badge'
 import type { SessionRecord } from '../services/sessions'
 import { listSessions } from '../services/sessions'
+import { SessionFormModal } from './sessions/SessionFormModal'
+import { computeCycleProgress } from '../utils/cycleProgress'
 
 export function SessionsPage() {
   const [sessions, setSessions] = useState<SessionRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [modalOpen, setModalOpen] = useState(false)
+
+  async function load() {
+    setLoading(true)
+    try {
+      setSessions(await listSessions())
+    } catch {
+      setError('No se pudieron cargar las sesiones.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    async function loadSessions() {
-      try {
-        const data = await listSessions()
-        setSessions(data)
-      } catch {
-        setError('No se pudieron cargar las sesiones.')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    void loadSessions()
+    void load()
   }, [])
+
+  const progressBySession = useMemo(() => computeCycleProgress(sessions), [sessions])
 
   return (
     <AppShell title="Sesiones EMT">
@@ -31,9 +37,9 @@ export function SessionsPage() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-lg font-semibold text-midnight-950">Registro de sesiones</h2>
-            <p className="text-sm text-slate-500">Control técnico y clínico de cada sesión.</p>
+            <p className="text-sm text-slate-500">Control técnico y clínico de cada sesión aplicada.</p>
           </div>
-          <Button>Registrar sesión</Button>
+          <Button onClick={() => setModalOpen(true)}>Registrar sesión</Button>
         </div>
 
         <div className="overflow-hidden rounded-3xl bg-white shadow-card">
@@ -46,14 +52,23 @@ export function SessionsPage() {
           ) : (
             <div className="overflow-x-auto">
               <Table
-                headers={["Paciente", "Fecha", "Protocolo", "Equipo", "Estado"]}
+                headers={['Paciente', 'Fecha', 'Protocolo', 'Equipo', 'Ciclo', 'Eventos adversos']}
                 rows={sessions.map((session) => (
                   <tr key={session.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-4 text-slate-700">{session.patient_id}</td>
-                    <td className="px-4 py-4 text-slate-500">{session.date}</td>
-                    <td className="px-4 py-4 text-slate-500">{session.protocol_id}</td>
-                    <td className="px-4 py-4 text-slate-500">{session.equipment_id}</td>
-                    <td className="px-4 py-4 text-slate-500">{session.clinical_response ? 'Completada' : 'Pendiente'}</td>
+                    <td className="px-4 py-4 text-slate-700">{session.patient?.full_name ?? '—'}</td>
+                    <td className="px-4 py-4 text-slate-500">
+                      {session.date} {session.start_time?.slice(0, 5) ?? ''}
+                    </td>
+                    <td className="px-4 py-4 text-slate-500">{session.protocol?.name ?? '—'}</td>
+                    <td className="px-4 py-4 text-slate-500">{session.equipment?.name ?? '—'}</td>
+                    <td className="px-4 py-4 text-slate-500">{progressBySession.get(session.id) ?? '—'}</td>
+                    <td className="px-4 py-4">
+                      {session.adverse_events ? (
+                        <Badge tone="warning">Sí</Badge>
+                      ) : (
+                        <Badge tone="neutral">No</Badge>
+                      )}
+                    </td>
                   </tr>
                 ))}
               />
@@ -61,6 +76,15 @@ export function SessionsPage() {
           )}
         </div>
       </div>
+
+      <SessionFormModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onCreated={() => {
+          setModalOpen(false)
+          void load()
+        }}
+      />
     </AppShell>
   )
 }

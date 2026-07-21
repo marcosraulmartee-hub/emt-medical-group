@@ -9,14 +9,14 @@ import {
 } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
-import type { AppRole, Profile } from '../types/auth'
+import type { Profile } from '../types/auth'
 import { loadPermissions } from '../services/permissions'
+import { logAudit } from '../services/audit'
 
 interface SignUpData {
   email: string
   password: string
   fullName: string
-  role: AppRole
 }
 
 interface AuthContextValue {
@@ -101,6 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = useCallback(async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) throw error
+    void logAudit('login', 'auth', null, { email })
   }, [])
 
   const appUrl = import.meta.env.VITE_APP_URL || (typeof window !== 'undefined' ? window.location.origin : 'https://localhost:5173')
@@ -110,7 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: d.email,
       password: d.password,
       options: {
-        data: { full_name: d.fullName, role: d.role },
+        data: { full_name: d.fullName },
         emailRedirectTo: `${appUrl}/login`,
       },
     })
@@ -119,6 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [appUrl])
 
   const signOut = useCallback(async () => {
+    await logAudit('logout', 'auth', null, {})
     const { error } = await supabase.auth.signOut()
     if (error) throw error
   }, [])
