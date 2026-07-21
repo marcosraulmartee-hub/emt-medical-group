@@ -1431,3 +1431,31 @@ begin
     alter table public.patients add constraint patients_status_check check (status in ('active', 'discharged'));
   end if;
 end $$;
+
+-- =====================================================================
+-- MIGRACIÓN 017 — Pendientes de recepción: notas libres editables desde el
+-- Dashboard (checklist propio del día a día, no clínico), visibles/editables
+-- para admin y recepcionista.
+-- Ejecutar este bloque completo en el SQL Editor de Supabase.
+-- =====================================================================
+
+create table if not exists public.staff_reminders (
+  id uuid primary key default gen_random_uuid(),
+  text text not null,
+  is_done boolean not null default false,
+  created_by uuid references auth.users(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+drop trigger if exists trg_staff_reminders_updated_at on public.staff_reminders;
+create trigger trg_staff_reminders_updated_at
+  before update on public.staff_reminders
+  for each row execute function public.set_updated_at();
+
+alter table public.staff_reminders enable row level security;
+
+drop policy if exists staff_reminders_all on public.staff_reminders;
+create policy staff_reminders_all on public.staff_reminders for all
+  using (public.current_app_role() in ('admin', 'recepcionista'))
+  with check (public.current_app_role() in ('admin', 'recepcionista'));

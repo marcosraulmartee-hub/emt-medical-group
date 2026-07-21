@@ -11,10 +11,7 @@ import { listPatients } from '../services/patients'
 import type { FollowUpPatient } from '../services/followUp'
 import { listPatientsNeedingFollowUp } from '../services/followUp'
 import { buildMailtoUrl, buildWhatsAppShareUrl, openShareWindow } from '../utils/share'
-
-function reminderMessage(name: string) {
-  return `Hola ${name}, te escribimos de EMT Medical Group — hace tiempo no te vemos por la clínica. ¿Deseas agendar tu próxima sesión de tratamiento?`
-}
+import { buildFollowUpReminderMessage } from '../utils/messages'
 
 export function PatientsPage() {
   const navigate = useNavigate()
@@ -61,7 +58,7 @@ export function PatientsPage() {
   }, [search, patients, showDischarged, followUpOnly, followUpIds])
 
   function sendReminder(patient: Patient, channel: 'whatsapp' | 'email') {
-    const message = reminderMessage(patient.full_name)
+    const message = buildFollowUpReminderMessage(patient.full_name)
     if (channel === 'whatsapp') {
       openShareWindow(buildWhatsAppShareUrl(patient.phone, message))
     } else {

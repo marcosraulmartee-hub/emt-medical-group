@@ -74,6 +74,19 @@ persona que retome el proyecto entienda las restricciones reales del negocio.
   a nivel de RLS, igual que las facturas emitidas) con quién lo cerró — visible para
   admin, recepcionista y contable.
 
+## Dashboard — pendientes de recepción y acciones rápidas
+
+Migración 017, tabla `staff_reminders` (visible/editable para admin y recepcionista —
+nuevo permiso `reminders.view` en `src/types/permissions.ts`).
+
+- "Pendientes de recepción": lista de notas libres editable ahí mismo (agregar, marcar
+  hecho, borrar) — para pendientes del día a día que no son datos clínicos.
+- "Acciones pendientes": citas con estado `pending` de los próximos 14 días (con botón
+  "Confirmar" y botón de WhatsApp que abre el mensaje de confirmación prellenado) y
+  pacientes en seguimiento de 30+ días (con botón de WhatsApp de recordatorio) —
+  reutiliza los mismos builders de mensaje que la Agenda y Pacientes
+  (`src/utils/messages.ts`).
+
 ## Alta de paciente y seguimiento
 
 Migración 016. `patients.status` ('active' | 'discharged') + `discharged_at` + `discharge_notes`.

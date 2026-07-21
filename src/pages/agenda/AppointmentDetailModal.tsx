@@ -2,6 +2,8 @@ import { Modal } from '../../components/ui/Modal'
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
 import type { Appointment, AppointmentStatus } from '../../services/appointments'
+import { buildWhatsAppShareUrl, openShareWindow } from '../../utils/share'
+import { buildAppointmentConfirmMessage } from '../../utils/messages'
 
 const STATUS_LABEL: Record<AppointmentStatus, string> = {
   pending: 'Pendiente',
@@ -36,6 +38,10 @@ export function AppointmentDetailModal({
   onReschedule: (a: Appointment) => void
   onConfirmReschedule: (a: Appointment) => void
 }) {
+  function handleWhatsAppConfirm() {
+    openShareWindow(buildWhatsAppShareUrl(appointment.patient?.phone, buildAppointmentConfirmMessage(appointment)))
+  }
+
   return (
     <Modal open title="Detalle de la cita" size="sm" onClose={onClose}>
       <div className="space-y-4">
@@ -73,6 +79,11 @@ export function AppointmentDetailModal({
         </dl>
 
         <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-4">
+          {(appointment.status === 'pending' || appointment.status === 'confirmed') && (
+            <Button size="sm" variant="secondary" onClick={handleWhatsAppConfirm}>
+              Confirmar por WhatsApp
+            </Button>
+          )}
           {appointment.status === 'pending' && (
             <Button size="sm" onClick={() => onConfirm(appointment)}>
               Confirmar

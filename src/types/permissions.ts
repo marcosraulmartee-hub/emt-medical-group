@@ -10,6 +10,7 @@ export const ALL_PERMISSIONS: string[] = [
   'reports.view',
   'settings.view',
   'audit.view',
+  'reminders.view',
 ]
 
 export const ROLE_MATRIX: Record<string, string[]> = {
@@ -35,6 +36,7 @@ export const ROLE_MATRIX: Record<string, string[]> = {
     'patients.view',
     'consents.view',
     'billing.view',
+    'reminders.view',
   ],
   contable: [
     'dashboard.view',
