@@ -1661,3 +1661,59 @@ $$;
 drop policy if exists invoices_delete on public.invoices;
 create policy invoices_delete on public.invoices for delete
   using (public.current_app_role() in ('admin', 'recepcionista') and status = 'draft');
+
+-- =====================================================================
+-- MIGRACIÓN 020 — Caja diaria: estado abierta/cerrada por día (antes el
+-- "Cuadre del día" no tenía ningún gesto de apertura, solo el cierre) y
+-- egresos (salidas de efectivo de caja, ej. compras menores) — no existía
+-- ningún registro de egresos hasta ahora. admin y recepcionista pueden
+-- abrir/cerrar la caja y registrar egresos; contable solo lee (mismo
+-- criterio que el resto de facturación/cuadre).
+-- Ejecutar este bloque completo en el SQL Editor de Supabase.
+-- =====================================================================
+
+create table if not exists public.cash_registers (
+  id uuid primary key default gen_random_uuid(),
+  business_date date not null unique,
+  status text not null default 'closed', -- open | closed
+  opening_amount numeric not null default 0,
+  opened_at timestamptz,
+  opened_by uuid references auth.users(id) on delete set null,
+  closed_at timestamptz,
+  closed_by uuid references auth.users(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+drop trigger if exists trg_cash_registers_updated_at on public.cash_registers;
+create trigger trg_cash_registers_updated_at
+  before update on public.cash_registers
+  for each row execute function public.set_updated_at();
+
+create table if not exists public.cash_expenses (
+  id uuid primary key default gen_random_uuid(),
+  business_date date not null,
+  amount numeric not null,
+  concept text not null,
+  method text not null default 'efectivo', -- efectivo | tarjeta | transferencia | otro
+  registered_by uuid references auth.users(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
+alter table public.cash_registers enable row level security;
+alter table public.cash_expenses enable row level security;
+
+drop policy if exists cash_registers_select on public.cash_registers;
+create policy cash_registers_select on public.cash_registers for select
+  using (public.current_app_role() in ('admin', 'recepcionista', 'contable'));
+drop policy if exists cash_registers_write on public.cash_registers;
+create policy cash_registers_write on public.cash_registers for all
+  using (public.current_app_role() in ('admin', 'recepcionista'))
+  with check (public.current_app_role() in ('admin', 'recepcionista'));
+
+drop policy if exists cash_expenses_select on public.cash_expenses;
+create policy cash_expenses_select on public.cash_expenses for select
+  using (public.current_app_role() in ('admin', 'recepcionista', 'contable'));
+drop policy if exists cash_expenses_insert on public.cash_expenses;
+create policy cash_expenses_insert on public.cash_expenses for insert
+  with check (public.current_app_role() in ('admin', 'recepcionista'));

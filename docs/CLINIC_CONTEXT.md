@@ -65,7 +65,21 @@ persona que retome el proyecto entienda las restricciones reales del negocio.
   documento nuevo. Un borrador nunca emitido se puede eliminar directamente.
 - Servicios de salud tratados como **exentos de ITBIS (0%)** — el campo es editable
   por si algún ítem facturado no está exento, pero el valor por defecto y el texto de
-  ayuda en el formulario dejan claro que la clínica normalmente no cobra ITBIS.
+  ayuda en el formulario dejan claro que la clínica normalmente no cobra ITBIS. En
+  Configuración → Facturación hay un checkbox explícito "Exento de ITBIS" que fuerza
+  la tasa a 0% y deshabilita el campo numérico mientras está marcado.
+- **Facturación → pestaña "Caja"** (antes "Cuadre del día", Migración 020, tablas
+  `cash_registers`/`cash_expenses`): la caja de un día debe **abrirse** explícitamente
+  (botón "Abrir caja", con monto inicial opcional) antes de ver el historial de
+  movimientos o registrar egresos — esto es nuevo respecto al cuadre anterior, que no
+  tenía ningún gesto de apertura. Muestra 5 métricas: Ventas del día (facturas
+  emitidas), Total cobrado, Pendiente por cobrar, Egresos, Balance final. El
+  historial de movimientos combina cobros (ingresos, en verde) y egresos (en rojo) en
+  una sola línea de tiempo. **Emitir facturas y registrar pagos NO requieren la caja
+  abierta** — solo los egresos la exigen — para no restringir el flujo de facturación
+  que recepcionista/admin ya tenían. "Cerrar caja" reemplaza al antiguo "Guardar
+  cuadre": pide el efectivo contado físicamente + notas, guarda el registro histórico
+  en `cash_closings` (sin cambios) y además marca la caja de ese día como cerrada.
 - Tarifario inicial cargado (Migración 007, editable en Configuración → Facturación):
   sesión TMS RD$8,500, evaluación inicial RD$5,000, seguimiento RD$3,000.
 - Recordatorios de cita por email/WhatsApp: **no implementado todavía** — requiere

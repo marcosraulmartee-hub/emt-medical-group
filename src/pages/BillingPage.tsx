@@ -97,7 +97,7 @@ export function BillingPage() {
         {!loading && draftCount > 0 && (
           <Alert variant="info">
             Hay {draftCount} factura{draftCount === 1 ? '' : 's'} en borrador sin emitir — hasta que se emitan (botón "Emitir
-            factura" dentro de cada una) no cuentan como facturado ni aparecen en el Cuadre del día.
+            factura" dentro de cada una) no cuentan como facturado ni aparecen en la Caja.
           </Alert>
         )}
 
@@ -118,7 +118,7 @@ export function BillingPage() {
               (tab === 'closing' ? 'bg-teal-500 text-white' : 'text-slate-600 hover:bg-slate-100')
             }
           >
-            Cuadre del día
+            Caja
           </button>
           <button
             onClick={() => setTab('budgets')}
