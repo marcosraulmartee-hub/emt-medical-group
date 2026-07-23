@@ -10,22 +10,30 @@ import { getSetting, setSetting } from '../../services/clinicSettings'
 
 function GeneralSettings() {
   const [taxRate, setTaxRate] = useState('0')
+  const [exempt, setExempt] = useState(true)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
   useEffect(() => {
     getSetting('tax_rate').then((tax) => {
-      setTaxRate(tax ?? '0')
+      const value = tax ?? '0'
+      setTaxRate(value)
+      setExempt(Number(value) === 0)
       setLoading(false)
     })
   }, [])
+
+  function handleExemptToggle(checked: boolean) {
+    setExempt(checked)
+    if (checked) setTaxRate('0')
+  }
 
   async function handleSave() {
     setSaving(true)
     setSaved(false)
     try {
-      await setSetting('tax_rate', taxRate)
+      await setSetting('tax_rate', exempt ? '0' : taxRate)
       setSaved(true)
     } finally {
       setSaving(false)
@@ -38,10 +46,20 @@ function GeneralSettings() {
     <div className="space-y-4 rounded-3xl bg-white p-6 shadow-card">
       <h3 className="text-base font-semibold text-midnight-950">Configuración general</h3>
       {saved && <Alert variant="success">Guardado.</Alert>}
+      <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+        <input
+          type="checkbox"
+          checked={exempt}
+          onChange={(e) => handleExemptToggle(e.target.checked)}
+          className="h-4 w-4 rounded border-slate-300 text-teal-500 focus:ring-teal-400"
+        />
+        Exento de ITBIS (servicios de salud) — aplica 0%
+      </label>
       <Input
         label="ITBIS (%)"
         type="number"
-        helper="Los servicios de salud están exentos de ITBIS en RD — dejalo en 0 salvo que la clínica facture algo no exento."
+        disabled={exempt}
+        helper={exempt ? 'Exento — no se cobra ITBIS en las facturas nuevas.' : 'Tasa que se aplica a las facturas nuevas.'}
         value={taxRate}
         onChange={(e) => setTaxRate(e.target.value)}
         className="sm:max-w-xs"
