@@ -95,7 +95,6 @@ export function BudgetDetailModal({
       await createDraftInvoice(
         {
           patient_id: budget.patient_id,
-          ncf_type: 'B02',
           due_date: null,
           tax_rate: taxRate,
           discount_amount: budget.discount_amount,

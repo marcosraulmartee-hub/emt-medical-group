@@ -3,25 +3,22 @@ import { Modal } from '../../components/ui/Modal'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { Select } from '../../components/ui/Select'
-import { Textarea } from '../../components/ui/Textarea'
 import { Badge } from '../../components/ui/Badge'
 import { Alert } from '../../components/ui/Alert'
 import type { Invoice, InvoiceItem, InvoiceStatus } from '../../services/invoices'
-import { createCreditNote, issueInvoice, listInvoiceItems } from '../../services/invoices'
+import { deleteDraftInvoice, issueInvoice, listInvoiceItems, voidInvoice } from '../../services/invoices'
 import type { Payment } from '../../services/payments'
 import { addPayment, listPaymentsForInvoice } from '../../services/payments'
 
 const STATUS_LABEL: Record<InvoiceStatus, string> = {
   draft: 'Borrador',
   issued: 'Emitida',
-  corrected: 'Corregida (nota de crédito)',
   cancelled: 'Anulada',
 }
 
 const STATUS_TONE: Record<InvoiceStatus, 'neutral' | 'success' | 'warning' | 'danger'> = {
   draft: 'neutral',
   issued: 'success',
-  corrected: 'warning',
   cancelled: 'danger',
 }
 
@@ -39,9 +36,9 @@ export function InvoiceDetailModal({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [issuing, setIssuing] = useState(false)
-  const [creditReason, setCreditReason] = useState('')
-  const [creditOpen, setCreditOpen] = useState(false)
-  const [creditSaving, setCreditSaving] = useState(false)
+  const [voidOpen, setVoidOpen] = useState(false)
+  const [voiding, setVoiding] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [paymentAmount, setPaymentAmount] = useState('')
   const [paymentMethod, setPaymentMethod] = useState('efectivo')
   const [paymentRef, setPaymentRef] = useState('')
@@ -85,17 +82,30 @@ export function InvoiceDetailModal({
     }
   }
 
-  async function handleCreditNote() {
-    setCreditSaving(true)
+  async function handleVoid() {
+    setVoiding(true)
     setError('')
     try {
-      await createCreditNote(invoice.id, creditReason)
-      setCreditOpen(false)
+      await voidInvoice(invoice.id)
+      setVoidOpen(false)
       onChanged()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo generar la nota de crédito.')
+      setError(err instanceof Error ? err.message : 'No se pudo anular la factura.')
     } finally {
-      setCreditSaving(false)
+      setVoiding(false)
+    }
+  }
+
+  async function handleDeleteDraft() {
+    setDeleting(true)
+    setError('')
+    try {
+      await deleteDraftInvoice(invoice.id)
+      onChanged()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo eliminar el borrador.')
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -117,7 +127,7 @@ export function InvoiceDetailModal({
   return (
     <Modal
       open
-      title={invoice.ncf_number ? `Factura ${invoice.ncf_number}` : 'Factura (borrador)'}
+      title={invoice.invoice_number ? `Factura ${invoice.invoice_number}` : 'Factura (borrador)'}
       size="lg"
       onClose={onClose}
     >
@@ -127,9 +137,7 @@ export function InvoiceDetailModal({
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <p className="text-sm font-medium text-midnight-950">{invoice.patient?.full_name}</p>
-            <p className="text-xs text-slate-500">
-              {invoice.ncf_type} · {invoice.issue_date ?? 'sin emitir'}
-            </p>
+            <p className="text-xs text-slate-500">{invoice.issue_date ?? 'sin emitir'}</p>
           </div>
           <div className="flex items-center gap-3">
             <Badge tone={STATUS_TONE[invoice.status]}>{STATUS_LABEL[invoice.status]}</Badge>
@@ -192,9 +200,14 @@ export function InvoiceDetailModal({
         </div>
 
         {invoice.status === 'draft' && (
-          <Button onClick={handleIssue} loading={issuing}>
-            Emitir factura
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={handleIssue} loading={issuing}>
+              Emitir factura
+            </Button>
+            <Button variant="danger" onClick={handleDeleteDraft} loading={deleting}>
+              Eliminar borrador
+            </Button>
+          </div>
         )}
 
         {invoice.status === 'issued' && (
@@ -224,31 +237,35 @@ export function InvoiceDetailModal({
                 </ul>
               )}
             </div>
-            <Button variant="danger" onClick={() => setCreditOpen(true)}>
-              Corregir con nota de crédito
+            <Button variant="danger" onClick={() => setVoidOpen(true)}>
+              Anular factura
             </Button>
           </div>
         )}
 
-        {invoice.status === 'corrected' && (
-          <Alert variant="info">Esta factura fue corregida mediante una nota de crédito.</Alert>
-        )}
+        {invoice.status === 'cancelled' && <Alert variant="info">Esta factura fue anulada.</Alert>}
       </div>
 
-      <Modal open={creditOpen} title="Nota de crédito" onClose={() => setCreditOpen(false)} size="sm" footer={
-        <>
-          <Button variant="secondary" onClick={() => setCreditOpen(false)} disabled={creditSaving}>
-            Cancelar
-          </Button>
-          <Button variant="danger" onClick={handleCreditNote} loading={creditSaving} disabled={!creditReason.trim()}>
-            Emitir nota de crédito
-          </Button>
-        </>
-      }>
-        <div className="space-y-3">
-          <Alert variant="info">Esto reversa el total de la factura y la marca como corregida. No se puede deshacer.</Alert>
-          <Textarea label="Motivo" required value={creditReason} onChange={(e) => setCreditReason(e.target.value)} />
-        </div>
+      <Modal
+        open={voidOpen}
+        title="Anular factura"
+        onClose={() => setVoidOpen(false)}
+        size="sm"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setVoidOpen(false)} disabled={voiding}>
+              Cancelar
+            </Button>
+            <Button variant="danger" onClick={handleVoid} loading={voiding}>
+              Confirmar anulación
+            </Button>
+          </>
+        }
+      >
+        <Alert variant="info">
+          La factura queda marcada como anulada y deja de contar como facturado en reportes y cuadre de caja. No se puede
+          deshacer.
+        </Alert>
       </Modal>
     </Modal>
   )

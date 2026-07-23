@@ -48,7 +48,7 @@ export function exportBudgetPdf(budget: Budget, items: BudgetItem[]) {
   doc.setFontSize(8)
   doc.setTextColor(120)
   doc.text(
-    'Este documento es un presupuesto informativo y no constituye un comprobante fiscal (no incluye NCF). El monto',
+    'Este documento es un presupuesto informativo y no constituye una factura formal. El monto',
     14,
     y,
   )

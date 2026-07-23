@@ -51,7 +51,7 @@ export function downloadConsentPdf() {
   doc.setTextColor(60, 60, 60)
   doc.text('Calle 10 esquina José A. Patiño, No. 2A, Villa Olga,', 105, 27, { align: 'center' })
   doc.text('Santiago de los Caballeros, República Dominicana.', 105, 32, { align: 'center' })
-  doc.text('Tel: (809) 330-1538   |   WhatsApp: +1 (849) 449-0904', 105, 37, { align: 'center' })
+  doc.text('Tel: (809) 330-1538   |   WhatsApp: (809) 570-8705', 105, 37, { align: 'center' })
   doc.text('www.emtmedicalgroup.do   |   emtmedicalgroup@gmail.com', 105, 42, { align: 'center' })
 
   doc.setTextColor(0, 0, 0)

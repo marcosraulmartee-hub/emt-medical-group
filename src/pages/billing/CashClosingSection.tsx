@@ -6,7 +6,7 @@ import { Alert } from '../../components/ui/Alert'
 import { Table } from '../../components/ui/Table'
 import type { PaymentWithInvoice } from '../../services/payments'
 import { listPaymentsForDate } from '../../services/payments'
-import { listInvoicesInRange } from '../../services/invoices'
+import { countDraftInvoices, listInvoicesInRange } from '../../services/invoices'
 import type { CashClosing } from '../../services/cashClosings'
 import { createCashClosing, listCashClosings } from '../../services/cashClosings'
 import { toISODate } from '../../utils/dates'
@@ -34,21 +34,24 @@ export function CashClosingSection() {
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
   const [history, setHistory] = useState<CashClosing[]>([])
+  const [draftCount, setDraftCount] = useState(0)
 
   async function load() {
     setLoading(true)
     setSaved(false)
     setError('')
     try {
-      const [p, invoices, closings] = await Promise.all([
+      const [p, invoices, closings, drafts] = await Promise.all([
         listPaymentsForDate(date),
         listInvoicesInRange(date, date),
         listCashClosings(),
+        countDraftInvoices().catch(() => 0),
       ])
       setPayments(p)
       setInvoicesCount(invoices.length)
       setInvoicesTotal(invoices.reduce((sum, inv) => sum + inv.total, 0))
       setHistory(closings)
+      setDraftCount(drafts)
     } catch {
       setError('No se pudo cargar el cuadre del día.')
     } finally {
@@ -119,6 +122,12 @@ export function CashClosingSection() {
 
       {error && <Alert variant="error">{error}</Alert>}
       {saved && <Alert variant="success">Cuadre del {date} guardado correctamente.</Alert>}
+      {!loading && payments.length === 0 && draftCount > 0 && (
+        <Alert variant="info">
+          No hay pagos para esta fecha, pero hay {draftCount} factura{draftCount === 1 ? '' : 's'} en borrador en el sistema
+          (de cualquier fecha) — el cuadre solo cuenta facturas ya emitidas. Revísalas en la pestaña "Facturas".
+        </Alert>
+      )}
 
       {loading ? (
         <div className="p-6 text-slate-500">Cargando...</div>
@@ -156,13 +165,13 @@ export function CashClosingSection() {
             ) : (
               <div className="overflow-x-auto">
                 <Table
-                  headers={['Hora', 'NCF', 'Paciente', 'Método', 'Referencia', 'Monto']}
+                  headers={['Hora', 'No. Factura', 'Paciente', 'Método', 'Referencia', 'Monto']}
                   rows={payments.map((p) => (
                     <tr key={p.id}>
                       <td className="px-4 py-3 text-slate-500">
                         {new Date(p.paid_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                       </td>
-                      <td className="px-4 py-3 text-slate-700">{p.invoice?.ncf_number ?? '—'}</td>
+                      <td className="px-4 py-3 text-slate-700">{p.invoice?.invoice_number ?? '—'}</td>
                       <td className="px-4 py-3 text-slate-500">{p.invoice?.patient?.full_name ?? '—'}</td>
                       <td className="px-4 py-3 text-slate-500">{METHOD_LABEL[p.method] ?? p.method}</td>
                       <td className="px-4 py-3 text-slate-500">{p.reference ?? '—'}</td>

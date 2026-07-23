@@ -53,10 +53,10 @@ export function exportCashClosingPdf(
     doc.text('Pagos del día', 14, y)
     autoTable(doc, {
       startY: y + 4,
-      head: [['Hora', 'NCF', 'Paciente', 'Método', 'Referencia', 'Monto']],
+      head: [['Hora', 'No. Factura', 'Paciente', 'Método', 'Referencia', 'Monto']],
       body: payments.map((p) => [
         new Date(p.paid_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
-        p.invoice?.ncf_number ?? '—',
+        p.invoice?.invoice_number ?? '—',
         p.invoice?.patient?.full_name ?? '—',
         p.method,
         p.reference ?? '—',

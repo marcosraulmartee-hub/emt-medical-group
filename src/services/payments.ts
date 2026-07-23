@@ -29,13 +29,13 @@ export async function addPayment(payload: { invoice_id: string; amount: number; 
 }
 
 export interface PaymentWithInvoice extends Payment {
-  invoice: { ncf_number: string | null; patient: { full_name: string } | null } | null
+  invoice: { invoice_number: string | null; patient: { full_name: string } | null } | null
 }
 
 export async function listPaymentsForDate(dateISO: string) {
   const { data, error } = await supabase
     .from('payments')
-    .select(`${SELECT}, invoice:invoices(ncf_number, patient:patients(full_name))`)
+    .select(`${SELECT}, invoice:invoices(invoice_number, patient:patients(full_name))`)
     .gte('paid_at', `${dateISO}T00:00:00`)
     .lte('paid_at', `${dateISO}T23:59:59.999`)
     .order('paid_at')

@@ -1,15 +1,13 @@
 import { supabase } from '../lib/supabase'
 import { logAudit } from './audit'
 
-export type InvoiceStatus = 'draft' | 'issued' | 'corrected' | 'cancelled'
+export type InvoiceStatus = 'draft' | 'issued' | 'cancelled'
 
 export interface Invoice {
   id: string
   patient_id: string
-  ncf_type: string
-  ncf_number: string | null
+  invoice_number: string | null
   status: InvoiceStatus
-  corrects_invoice_id: string | null
   issue_date: string | null
   due_date: string | null
   subtotal: number
@@ -34,13 +32,19 @@ export interface InvoiceItem {
   package_id: string | null
 }
 
-const INVOICE_SELECT = `id, patient_id, ncf_type, ncf_number, status, corrects_invoice_id, issue_date, due_date, subtotal, tax_rate, tax_amount, discount_amount, total, notes, created_at, updated_at, patient:patients(full_name)`
+const INVOICE_SELECT = `id, patient_id, invoice_number, status, issue_date, due_date, subtotal, tax_rate, tax_amount, discount_amount, total, notes, created_at, updated_at, patient:patients(full_name)`
 const ITEM_SELECT = `id, invoice_id, description, quantity, unit_price, amount, session_id, package_id`
 
 export async function listInvoices() {
   const { data, error } = await supabase.from('invoices').select(INVOICE_SELECT).order('created_at', { ascending: false })
   if (error) throw error
   return data as unknown as Invoice[]
+}
+
+export async function countDraftInvoices() {
+  const { count, error } = await supabase.from('invoices').select('id', { count: 'exact', head: true }).eq('status', 'draft')
+  if (error) throw error
+  return count ?? 0
 }
 
 export async function getInvoice(id: string) {
@@ -58,7 +62,6 @@ export async function listInvoiceItems(invoiceId: string) {
 export async function createDraftInvoice(
   invoice: {
     patient_id: string
-    ncf_type: string
     due_date: string | null
     tax_rate: number
     discount_amount: number
@@ -75,7 +78,6 @@ export async function createDraftInvoice(
     .from('invoices')
     .insert({
       patient_id: invoice.patient_id,
-      ncf_type: invoice.ncf_type,
       due_date: invoice.due_date,
       tax_rate: invoice.tax_rate,
       discount_amount: invoice.discount_amount,
@@ -106,13 +108,19 @@ export async function createDraftInvoice(
   return invoiceRow
 }
 
+export async function deleteDraftInvoice(id: string) {
+  const { error } = await supabase.from('invoices').delete().eq('id', id)
+  if (error) throw error
+  void logAudit('delete', 'invoice', id, {})
+}
+
 export async function listInvoicesInRange(from: string, to: string) {
   const { data, error } = await supabase
     .from('invoices')
     .select(INVOICE_SELECT)
     .gte('issue_date', from)
     .lte('issue_date', to)
-    .in('status', ['issued', 'corrected'])
+    .eq('status', 'issued')
     .order('issue_date')
   if (error) throw error
   return data as unknown as Invoice[]
@@ -122,14 +130,14 @@ export async function issueInvoice(id: string) {
   const { data, error } = await supabase.rpc('issue_invoice', { p_invoice_id: id })
   if (error) throw error
   const invoice = data as unknown as Invoice
-  void logAudit('issue', 'invoice', invoice.id, { ncf_number: invoice.ncf_number, total: invoice.total })
+  void logAudit('issue', 'invoice', invoice.id, { invoice_number: invoice.invoice_number, total: invoice.total })
   return invoice
 }
 
-export async function createCreditNote(invoiceId: string, reason: string) {
-  const { data, error } = await supabase.rpc('create_credit_note', { p_invoice_id: invoiceId, p_reason: reason })
+export async function voidInvoice(id: string) {
+  const { data, error } = await supabase.rpc('void_invoice', { p_invoice_id: id })
   if (error) throw error
-  const credit = data as unknown as Invoice
-  void logAudit('credit_note', 'invoice', invoiceId, { credit_note_id: credit.id, reason })
-  return credit
+  const invoice = data as unknown as Invoice
+  void logAudit('void', 'invoice', invoice.id, { invoice_number: invoice.invoice_number })
+  return invoice
 }

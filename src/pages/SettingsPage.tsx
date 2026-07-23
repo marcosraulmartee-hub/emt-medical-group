@@ -7,6 +7,7 @@ import { UsersSection } from './settings/UsersSection'
 import { ChecklistSection } from './settings/ChecklistSection'
 import { ClinicalScalesSection } from './settings/ClinicalScalesSection'
 import { BillingSettingsSection } from './settings/BillingSettingsSection'
+import { PermissionsSection } from './settings/PermissionsSection'
 
 const TABS = [
   { key: 'equipment', label: 'Equipos' },
@@ -16,6 +17,7 @@ const TABS = [
   { key: 'scales', label: 'Escalas clínicas' },
   { key: 'billing', label: 'Facturación' },
   { key: 'users', label: 'Usuarios' },
+  { key: 'permissions', label: 'Permisos' },
 ] as const
 
 type TabKey = (typeof TABS)[number]['key']
@@ -49,6 +51,7 @@ export function SettingsPage() {
           {tab === 'scales' && <ClinicalScalesSection />}
           {tab === 'billing' && <BillingSettingsSection />}
           {tab === 'users' && <UsersSection />}
+          {tab === 'permissions' && <PermissionsSection />}
         </div>
       </div>
     </AppShell>

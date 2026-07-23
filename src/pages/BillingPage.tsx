@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import * as XLSX from 'xlsx'
 import { AppShell } from '../components/layout/AppShell'
 import { Button } from '../components/ui/Button'
 import { Table } from '../components/ui/Table'
 import { Badge } from '../components/ui/Badge'
+import { Alert } from '../components/ui/Alert'
 import type { Invoice, InvoiceStatus } from '../services/invoices'
 import { listInvoices } from '../services/invoices'
 import { InvoiceFormModal } from './billing/InvoiceFormModal'
@@ -14,14 +15,12 @@ import { BudgetsSection } from './billing/BudgetsSection'
 const STATUS_LABEL: Record<InvoiceStatus, string> = {
   draft: 'Borrador',
   issued: 'Emitida',
-  corrected: 'Corregida',
   cancelled: 'Anulada',
 }
 
 const STATUS_TONE: Record<InvoiceStatus, 'neutral' | 'success' | 'warning' | 'danger'> = {
   draft: 'neutral',
   issued: 'success',
-  corrected: 'warning',
   cancelled: 'danger',
 }
 
@@ -50,6 +49,8 @@ export function BillingPage() {
     void load()
   }, [])
 
+  const draftCount = useMemo(() => invoices.filter((inv) => inv.status === 'draft').length, [invoices])
+
   async function exportPdf() {
     const { exportInvoiceListPdf } = await import('../utils/invoicePdf')
     exportInvoiceListPdf(invoices)
@@ -57,8 +58,7 @@ export function BillingPage() {
 
   function exportExcel() {
     const rows = invoices.map((inv) => ({
-      NCF: inv.ncf_number ?? '',
-      Tipo: inv.ncf_type,
+      'No. Factura': inv.invoice_number ?? '',
       Paciente: inv.patient?.full_name ?? '',
       Estado: STATUS_LABEL[inv.status],
       'Fecha emisión': inv.issue_date ?? '',
@@ -79,7 +79,7 @@ export function BillingPage() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-lg font-semibold text-midnight-950">Facturación</h2>
-            <p className="text-sm text-slate-500">NCF, cobros por sesión, paquetes de sesiones y cuadre de caja.</p>
+            <p className="text-sm text-slate-500">Cobros por sesión, paquetes de sesiones y cuadre de caja.</p>
           </div>
           {tab === 'invoices' && (
             <div className="flex gap-2">
@@ -93,6 +93,13 @@ export function BillingPage() {
             </div>
           )}
         </div>
+
+        {!loading && draftCount > 0 && (
+          <Alert variant="info">
+            Hay {draftCount} factura{draftCount === 1 ? '' : 's'} en borrador sin emitir — hasta que se emitan (botón "Emitir
+            factura" dentro de cada una) no cuentan como facturado ni aparecen en el Cuadre del día.
+          </Alert>
+        )}
 
         <div className="flex gap-2 rounded-2xl bg-white p-1.5 shadow-card sm:w-fit">
           <button
@@ -139,10 +146,10 @@ export function BillingPage() {
             ) : (
               <div className="overflow-x-auto">
                 <Table
-                  headers={['NCF', 'Paciente', 'Fecha', 'Estado', 'Total']}
+                  headers={['No. Factura', 'Paciente', 'Fecha', 'Estado', 'Total']}
                   rows={invoices.map((inv) => (
                     <tr key={inv.id} className="cursor-pointer hover:bg-slate-50" onClick={() => setSelected(inv)}>
-                      <td className="px-4 py-4 text-slate-700">{inv.ncf_number ?? `${inv.ncf_type} · borrador`}</td>
+                      <td className="px-4 py-4 text-slate-700">{inv.invoice_number ?? 'Borrador'}</td>
                       <td className="px-4 py-4 text-slate-500">{inv.patient?.full_name ?? '—'}</td>
                       <td className="px-4 py-4 text-slate-500">{inv.issue_date ?? '—'}</td>
                       <td className="px-4 py-4">

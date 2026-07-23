@@ -18,16 +18,10 @@ interface LineItem {
   unit_price: number
 }
 
-const NCF_TYPES = [
-  { value: 'B02', label: 'B02 · Consumidor Final' },
-  { value: 'B01', label: 'B01 · Crédito Fiscal' },
-]
-
 export function InvoiceFormModal({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: () => void }) {
   const [patients, setPatients] = useState<Patient[]>([])
   const [priceList, setPriceList] = useState<PriceListItem[]>([])
   const [patientId, setPatientId] = useState('')
-  const [ncfType, setNcfType] = useState('B02')
   const [dueDate, setDueDate] = useState('')
   const [taxRate, setTaxRate] = useState(0)
   const [discount, setDiscount] = useState(0)
@@ -39,7 +33,6 @@ export function InvoiceFormModal({ open, onClose, onCreated }: { open: boolean; 
   useEffect(() => {
     if (!open) return
     setPatientId('')
-    setNcfType('B02')
     setDueDate('')
     setDiscount(0)
     setNotes('')
@@ -77,7 +70,7 @@ export function InvoiceFormModal({ open, onClose, onCreated }: { open: boolean; 
     setError('')
     try {
       await createDraftInvoice(
-        { patient_id: patientId, ncf_type: ncfType, due_date: dueDate || null, tax_rate: taxRate, discount_amount: discount, notes },
+        { patient_id: patientId, due_date: dueDate || null, tax_rate: taxRate, discount_amount: discount, notes },
         validItems,
       )
       onCreated()
@@ -108,23 +101,14 @@ export function InvoiceFormModal({ open, onClose, onCreated }: { open: boolean; 
       <div className="space-y-4">
         {error && <Alert variant="error">{error}</Alert>}
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Select label="Paciente" required value={patientId} onChange={(e) => setPatientId(e.target.value)}>
-            <option value="">Seleccioná un paciente</option>
-            {patients.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.full_name}
-              </option>
-            ))}
-          </Select>
-          <Select label="Tipo de NCF" value={ncfType} onChange={(e) => setNcfType(e.target.value)}>
-            {NCF_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
-              </option>
-            ))}
-          </Select>
-        </div>
+        <Select label="Paciente" required value={patientId} onChange={(e) => setPatientId(e.target.value)}>
+          <option value="">Seleccioná un paciente</option>
+          {patients.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.full_name}
+            </option>
+          ))}
+        </Select>
 
         <div className="space-y-3 rounded-2xl border border-slate-200 p-4">
           <div className="flex items-center justify-between">
@@ -180,7 +164,13 @@ export function InvoiceFormModal({ open, onClose, onCreated }: { open: boolean; 
 
         <div className="grid gap-4 sm:grid-cols-3">
           <Input label="Fecha de vencimiento" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
-          <Input label="ITBIS (%)" type="number" value={taxRate} onChange={(e) => setTaxRate(Number(e.target.value))} />
+          <Input
+            label="ITBIS (%)"
+            type="number"
+            helper="Servicios de salud exentos — dejalo en 0 salvo que factures algo no exento."
+            value={taxRate}
+            onChange={(e) => setTaxRate(Number(e.target.value))}
+          />
           <Input label="Descuento" type="number" value={discount} onChange={(e) => setDiscount(Number(e.target.value))} />
         </div>
 

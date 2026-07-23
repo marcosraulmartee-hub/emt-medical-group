@@ -84,13 +84,10 @@ export function ReportsPage() {
   const fiscal = useMemo(() => {
     const totalFacturado = invoices.reduce((sum, i) => sum + i.total, 0)
     const totalItbis = invoices.reduce((sum, i) => sum + i.tax_amount, 0)
-    const byType = new Map<string, number>()
-    for (const inv of invoices) byType.set(inv.ncf_type, (byType.get(inv.ncf_type) ?? 0) + inv.total)
     return {
       totalFacturado,
       totalItbis,
       cantidad: invoices.length,
-      byType: [...byType.entries()].map(([label, value]) => ({ label, value: value.toFixed(2) })),
     }
   }, [invoices])
 
@@ -142,7 +139,6 @@ export function ReportsPage() {
               <StatCard label="ITBIS recaudado" value={fiscal.totalItbis.toFixed(2)} />
               <StatCard label="Facturas emitidas" value={fiscal.cantidad} />
             </div>
-            <GroupTable title="Facturado por tipo de NCF" rows={fiscal.byType} />
           </div>
         )}
 

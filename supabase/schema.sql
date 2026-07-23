@@ -1459,3 +1459,205 @@ drop policy if exists staff_reminders_all on public.staff_reminders;
 create policy staff_reminders_all on public.staff_reminders for all
   using (public.current_app_role() in ('admin', 'recepcionista'))
   with check (public.current_app_role() in ('admin', 'recepcionista'));
+
+-- =====================================================================
+-- MIGRACIÓN 018 — Arregla huecos de RLS que dejaban a recepcionista sin
+-- opciones en "Protocolo" y "Clínico/técnico asignado" al crear una cita
+-- (no era un bug de la UI: las políticas de SELECT no la dejaban leer esas
+-- tablas). Agrega NCF tipo B03 (Nota de Débito). Y siembra permissions /
+-- roles / role_permissions con el estado actual de ROLE_MATRIX, para que
+-- Configuración → Permisos (nuevo) pueda editar accesos por rol desde la
+-- app sin tocar código — src/services/permissions.ts ya prioriza
+-- role_permissions sobre el matrix hardcodeado si hay filas.
+-- Ejecutar este bloque completo en el SQL Editor de Supabase.
+-- =====================================================================
+
+-- 1) profiles: cualquier staff activo puede LEER todos los perfiles (nombre
+--    y rol de otros usuarios) — lo necesita para asignar clínico/técnico en
+--    citas, ver "cerrado por" en cuadres, etc. La escritura (profiles_update)
+--    se queda igual: cada quien solo edita el suyo, admin edita todos.
+drop policy if exists profiles_select on public.profiles;
+create policy profiles_select on public.profiles for select
+  using (public.current_app_role() is not null);
+
+-- 2) protocols: recepcionista necesita leerlos para elegir protocolo al
+--    agendar una cita (la escritura sigue siendo solo admin).
+drop policy if exists protocols_select on public.protocols;
+create policy protocols_select on public.protocols for select
+  using (public.current_app_role() in ('admin', 'medico', 'tecnico', 'recepcionista'));
+
+-- 3) NCF tipo B03 (Nota de Débito) — faltaba en el catálogo inicial.
+insert into public.ncf_sequences (ncf_type, label) values
+  ('B03', 'Nota de Débito')
+on conflict (ncf_type) do nothing;
+
+-- 4) Catálogo de permisos y roles (antes vacío — current_app_role()/
+--    loadPermissions() ya sabían leerlo, solo faltaban los datos y la UI).
+insert into public.permissions (key, label) values
+  ('dashboard.view', 'Ver Dashboard'),
+  ('agenda.view', 'Ver Agenda'),
+  ('patients.view', 'Ver Pacientes'),
+  ('protocols.view', 'Ver Protocolos'),
+  ('consents.view', 'Ver Consentimientos'),
+  ('sessions.view', 'Ver Sesiones'),
+  ('research.view', 'Ver Investigación'),
+  ('billing.view', 'Ver Facturación'),
+  ('reports.view', 'Ver Reportes'),
+  ('settings.view', 'Ver Configuración'),
+  ('audit.view', 'Ver Auditoría'),
+  ('reminders.view', 'Ver pendientes de recepción (Dashboard)')
+on conflict (key) do nothing;
+
+insert into public.roles (code, label) values
+  ('admin', 'Administrador'),
+  ('medico', 'Médico'),
+  ('tecnico', 'Técnico'),
+  ('recepcionista', 'Recepcionista'),
+  ('contable', 'Contable'),
+  ('paciente', 'Paciente')
+on conflict (code) do nothing;
+
+-- Estado inicial = exactamente lo que ya hacía ROLE_MATRIX en el código,
+-- para que sembrar esto no cambie el acceso de nadie hasta que un admin
+-- lo edite desde Configuración → Permisos.
+insert into public.role_permissions (role_code, permission_key)
+select role_code::public.app_role, permission_key from (values
+  ('admin', 'dashboard.view'), ('admin', 'agenda.view'), ('admin', 'patients.view'),
+  ('admin', 'protocols.view'), ('admin', 'consents.view'), ('admin', 'sessions.view'),
+  ('admin', 'research.view'), ('admin', 'billing.view'), ('admin', 'reports.view'),
+  ('admin', 'settings.view'), ('admin', 'audit.view'), ('admin', 'reminders.view'),
+  ('medico', 'dashboard.view'), ('medico', 'agenda.view'), ('medico', 'patients.view'),
+  ('medico', 'protocols.view'), ('medico', 'consents.view'), ('medico', 'sessions.view'),
+  ('medico', 'research.view'),
+  ('tecnico', 'dashboard.view'), ('tecnico', 'agenda.view'), ('tecnico', 'protocols.view'),
+  ('tecnico', 'sessions.view'),
+  ('recepcionista', 'dashboard.view'), ('recepcionista', 'agenda.view'), ('recepcionista', 'patients.view'),
+  ('recepcionista', 'consents.view'), ('recepcionista', 'billing.view'), ('recepcionista', 'reminders.view'),
+  ('contable', 'dashboard.view'), ('contable', 'billing.view'), ('contable', 'reports.view')
+) as seed(role_code, permission_key)
+on conflict (role_code, permission_key) do nothing;
+
+-- =====================================================================
+-- MIGRACIÓN 019 — Se retira el sistema NCF/DGII de la facturación:
+-- numeración interna simple (F-1001, F-1002...) en vez de tipos B01-B04
+-- con rangos autorizados por la DGII (esa complejidad ya no aplica al
+-- flujo de la clínica). Los servicios de salud están exentos de ITBIS en
+-- RD — tax_rate sigue en 0% por defecto y editable solo si algún ítem no
+-- exento lo requiere. "Anular" reemplaza a la nota de crédito como
+-- mecanismo de corrección de una factura ya emitida, y un borrador
+-- (nunca emitido) ahora se puede eliminar directamente.
+-- Ejecutar este bloque completo en el SQL Editor de Supabase.
+-- =====================================================================
+
+create sequence if not exists public.invoice_number_seq start 1001;
+
+alter table public.invoices add column if not exists invoice_number text;
+
+-- Preserva el historial: una factura que ya tenía NCF conserva ese valor
+-- como su número de factura, en vez de perderlo.
+update public.invoices set invoice_number = ncf_number where invoice_number is null and ncf_number is not null;
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'invoices_invoice_number_key') then
+    alter table public.invoices add constraint invoices_invoice_number_key unique (invoice_number);
+  end if;
+end $$;
+
+alter table public.invoices alter column ncf_type drop not null;
+
+do $$
+begin
+  if exists (select 1 from pg_constraint where conname = 'invoices_ncf_type_fkey') then
+    alter table public.invoices drop constraint invoices_ncf_type_fkey;
+  end if;
+end $$;
+
+-- Emitir factura: ya no depende de ncf_sequences/rangos DGII — asigna el
+-- próximo número correlativo simple de forma atómica.
+create or replace function public.issue_invoice(p_invoice_id uuid)
+returns public.invoices
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_invoice public.invoices;
+begin
+  if public.current_app_role() not in ('admin', 'recepcionista') then
+    raise exception 'No autorizado para emitir facturas';
+  end if;
+
+  select * into v_invoice from public.invoices where id = p_invoice_id for update;
+  if v_invoice.id is null then
+    raise exception 'Factura no encontrada';
+  end if;
+  if v_invoice.status <> 'draft' then
+    raise exception 'Solo se pueden emitir facturas en borrador';
+  end if;
+
+  update public.invoices
+    set invoice_number = 'F-' || nextval('public.invoice_number_seq')::text,
+        status = 'issued',
+        issue_date = coalesce(issue_date, current_date)
+    where id = p_invoice_id
+    returning * into v_invoice;
+
+  return v_invoice;
+end;
+$$;
+
+-- Reemplaza la nota de crédito (B04) por "Anular": marca la factura
+-- emitida como cancelada, sin generar un documento nuevo.
+create or replace function public.void_invoice(p_invoice_id uuid)
+returns public.invoices
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_invoice public.invoices;
+begin
+  if public.current_app_role() not in ('admin', 'recepcionista') then
+    raise exception 'No autorizado para anular facturas';
+  end if;
+
+  select * into v_invoice from public.invoices where id = p_invoice_id for update;
+  if v_invoice.id is null then
+    raise exception 'Factura no encontrada';
+  end if;
+  if v_invoice.status <> 'issued' then
+    raise exception 'Solo se pueden anular facturas emitidas';
+  end if;
+
+  update public.invoices set status = 'cancelled' where id = p_invoice_id returning * into v_invoice;
+  return v_invoice;
+end;
+$$;
+
+-- La inmutabilidad de una factura emitida ahora también permite pasar a
+-- 'cancelled' (antes solo permitía 'issued'/'corrected').
+create or replace function public.enforce_invoice_immutability()
+returns trigger
+language plpgsql
+as $$
+begin
+  if old.status = 'issued' then
+    if new.subtotal is distinct from old.subtotal
+      or new.tax_amount is distinct from old.tax_amount
+      or new.discount_amount is distinct from old.discount_amount
+      or new.total is distinct from old.total
+      or new.patient_id is distinct from old.patient_id
+      or new.issue_date is distinct from old.issue_date
+      or (new.status is distinct from old.status and new.status not in ('issued', 'cancelled'))
+    then
+      raise exception 'La factura ya fue emitida y es inmutable. Usá "Anular" para corregirla.';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+drop policy if exists invoices_delete on public.invoices;
+create policy invoices_delete on public.invoices for delete
+  using (public.current_app_role() in ('admin', 'recepcionista') and status = 'draft');

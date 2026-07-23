@@ -6,7 +6,6 @@ import type { Payment } from '../services/payments'
 const STATUS_LABEL: Record<Invoice['status'], string> = {
   draft: 'Borrador',
   issued: 'Emitida',
-  corrected: 'Corregida',
   cancelled: 'Anulada',
 }
 
@@ -19,10 +18,9 @@ export function exportInvoiceListPdf(invoices: Invoice[]) {
 
   autoTable(doc, {
     startY: 28,
-    head: [['NCF', 'Tipo', 'Paciente', 'Estado', 'Fecha', 'Subtotal', 'Descuento', 'ITBIS', 'Total']],
+    head: [['No. Factura', 'Paciente', 'Estado', 'Fecha', 'Subtotal', 'Descuento', 'ITBIS', 'Total']],
     body: invoices.map((inv) => [
-      inv.ncf_number ?? '—',
-      inv.ncf_type,
+      inv.invoice_number ?? '—',
       inv.patient?.full_name ?? '—',
       STATUS_LABEL[inv.status],
       inv.issue_date ?? '—',
@@ -47,7 +45,7 @@ export function exportInvoicePdf(invoice: Invoice, items: InvoiceItem[], payment
   doc.text('Clínica de neuromodulación (rTMS / EMT)', 14, 24)
 
   doc.setFontSize(11)
-  doc.text(invoice.ncf_number ? `NCF: ${invoice.ncf_number}` : `Tipo NCF: ${invoice.ncf_type} (borrador, sin emitir)`, 14, 36)
+  doc.text(invoice.invoice_number ? `Factura: ${invoice.invoice_number}` : 'Borrador (sin emitir)', 14, 36)
   doc.text(`Estado: ${STATUS_LABEL[invoice.status]}`, 14, 42)
   doc.text(`Fecha de emisión: ${invoice.issue_date ?? '—'}`, 14, 48)
   doc.text(`Paciente: ${invoice.patient?.full_name ?? '—'}`, 14, 54)
@@ -96,5 +94,5 @@ export function exportInvoicePdf(invoice: Invoice, items: InvoiceItem[], payment
     doc.text(`Notas: ${invoice.notes}`, 14, notesY)
   }
 
-  doc.save(`${invoice.ncf_number ?? 'factura-borrador'}.pdf`)
+  doc.save(`${invoice.invoice_number ?? 'factura-borrador'}.pdf`)
 }

@@ -9,8 +9,12 @@ persona que retome el proyecto entienda las restricciones reales del negocio.
 - Sede única: Calle 10 esquina José A. Patiño, No. 2A, Villa Olga, Santiago de los
   Caballeros, República Dominicana (confirmado por el consentimiento informado y el
   brochure oficiales — corrige la referencia anterior a "Plaza Esencia").
-- Contacto: tel. (809) 330-1538, WhatsApp +1 (849) 449-0904, www.emtmedicalgroup.do,
-  emtmedicalgroup@gmail.com.
+- Contacto: tel. (809) 330-1538, WhatsApp (809) 570-8705, www.emtmedicalgroup.do,
+  emtmedicalgroup@gmail.com. El número de WhatsApp de la empresa debe estar vinculado
+  (WhatsApp Web o WhatsApp Business en el dispositivo) en el equipo que use recepción,
+  para que los botones de WhatsApp de la app (confirmar citas, recordatorios de
+  seguimiento, compartir consentimiento/presupuesto) salgan desde ese número — no hay
+  configuración de código para esto, depende de la sesión activa del dispositivo.
 - Equipo humano (~9 personas): 6 socios/médicos, 1 técnico operador, 1 recepcionista, 1 contable.
 - Marco legal: Ley 172-13 (protección de datos personales, RD) + buenas prácticas de
   habilitación del Ministerio de Salud Pública. HIPAA se usa solo como referencia de
@@ -48,11 +52,20 @@ persona que retome el proyecto entienda las restricciones reales del negocio.
 
 ## Facturación
 
-- NCF gestionados internamente (B01 crédito fiscal, B02 consumidor final, B04 nota de
-  crédito), sin conexión a la DGII por defecto — el interruptor e-CF queda apagado
-  hasta que se implemente esa integración.
-- Servicios de salud tratados como **exentos de ITBIS (0%)** de forma provisional —
-  pendiente de confirmación formal con el contable de la clínica.
+- **Migración 019 (decisión explícita del cliente): se retiró el sistema NCF/DGII.**
+  Antes las facturas llevaban tipo B01/B02/B03/B04 con rangos autorizados por la DGII
+  (`ncf_sequences`) y `issue_invoice()` rechazaba emitir si no había rango cargado —
+  eso generaba facturas atascadas en "Borrador" y complejidad que la clínica no
+  necesita en este momento. Ahora cada factura emitida recibe un número correlativo
+  simple (`invoice_number`, formato "F-1001", "F-1002"...) vía la secuencia Postgres
+  `invoice_number_seq`, sin ningún tipo de comprobante ni validación de rango. El
+  cumplimiento fiscal formal ante la DGII (si la clínica lo necesita más adelante) se
+  maneja fuera de la app. Corregir una factura emitida ahora es "Anular" (estado
+  `cancelled`, función `void_invoice()`) en vez de una nota de crédito — no genera un
+  documento nuevo. Un borrador nunca emitido se puede eliminar directamente.
+- Servicios de salud tratados como **exentos de ITBIS (0%)** — el campo es editable
+  por si algún ítem facturado no está exento, pero el valor por defecto y el texto de
+  ayuda en el formulario dejan claro que la clínica normalmente no cobra ITBIS.
 - Tarifario inicial cargado (Migración 007, editable en Configuración → Facturación):
   sesión TMS RD$8,500, evaluación inicial RD$5,000, seguimiento RD$3,000.
 - Recordatorios de cita por email/WhatsApp: **no implementado todavía** — requiere
@@ -73,6 +86,33 @@ persona que retome el proyecto entienda las restricciones reales del negocio.
   contra el sistema. "Guardar cuadre" deja un registro inmutable (sin update/delete
   a nivel de RLS, igual que las facturas emitidas) con quién lo cerró — visible para
   admin, recepcionista y contable.
+
+## Migración 018 — huecos de RLS, NCF B03 y permisos editables desde la app
+
+- **Bug de RLS resuelto**: `profiles_select` solo dejaba a cada usuario leer su propio
+  perfil (o admin, todos). Eso hacía que el selector "Clínico/técnico asignado" en
+  Nueva cita saliera vacío para recepcionista — no podía leer los perfiles de los
+  demás. Ahora cualquier staff activo puede leer todos los perfiles (nombre + rol);
+  la escritura sigue igual de restringida (cada quien el suyo, admin todos).
+- **Bug de RLS resuelto**: `protocols_select` no incluía a recepcionista, por eso el
+  selector de protocolo en Nueva cita también salía vacío para ella. Ahora sí puede
+  leer protocolos (la escritura sigue siendo solo admin).
+- **NCF**: se agregó el tipo **B03 (Nota de Débito)** al catálogo (`ncf_sequences`) y
+  al selector de "Nueva factura" — antes solo existían B01/B02/B04.
+- **Facturas atascadas en borrador / Cuadre vacío**: la causa más probable es que el
+  tipo de NCF usado no tiene rango autorizado cargado en Configuración → Facturación
+  → Secuencias NCF (`range_end = 0`) — `issue_invoice()` rechaza emitir en ese caso y
+  la factura queda en "Borrador" para siempre, lo que también la deja fuera del
+  Cuadre del día (que solo cuenta facturas `issued`/`corrected`). Se agregaron avisos
+  visibles en Facturación y en Cuadre del día que detectan esto y lo explican in situ.
+- **Permisos por rol editables desde la app** (Configuración → Permisos, admin only):
+  antes `ROLE_MATRIX` en `src/types/permissions.ts` era la única fuente — ahora se
+  sembraron las tablas `permissions`/`roles`/`role_permissions` (antes vacías) con el
+  estado exacto de `ROLE_MATRIX`, y `loadPermissions()` (`src/services/permissions.ts`)
+  ya las prioriza sobre el matrix hardcodeado. El admin puede prender/apagar el acceso
+  de cualquier rol (excepto admin, que siempre tiene todo) a cualquier sección desde
+  una tabla de checkboxes, sin tocar código. Los cambios aplican la próxima vez que
+  ese usuario recargue sesión (no en caliente).
 
 ## Dashboard — pendientes de recepción y acciones rápidas
 
