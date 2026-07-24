@@ -6,7 +6,7 @@ import { Alert } from '../../components/ui/Alert'
 import { Button } from '../../components/ui/Button'
 import { useAuth } from '../../hooks/useAuth'
 import { ROLE_LABELS, STAFF_ROLES, type AppRole, type Profile } from '../../types/auth'
-import { listUsers, setUserActive, updateUserRole } from '../../services/users'
+import { listUsers, setUserActive, updateUserName, updateUserRole } from '../../services/users'
 
 const projectRef = (import.meta.env.VITE_SUPABASE_URL ?? '').match(/https:\/\/([^.]+)\.supabase\.co/)?.[1]
 const supabaseUsersUrl = projectRef ? `https://supabase.com/dashboard/project/${projectRef}/auth/users` : null
@@ -17,6 +17,8 @@ export function UsersSection() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [savingId, setSavingId] = useState<string | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [nameDraft, setNameDraft] = useState('')
 
   async function load() {
     setLoading(true)
@@ -40,6 +42,24 @@ export function UsersSection() {
       setItems((prev) => prev.map((p) => (p.id === id ? updated : p)))
     } catch {
       setError('No se pudo actualizar el rol.')
+    } finally {
+      setSavingId(null)
+    }
+  }
+
+  function startEditName(item: Profile) {
+    setEditingId(item.id)
+    setNameDraft(item.full_name || '')
+  }
+
+  async function handleSaveName(id: string) {
+    setSavingId(id)
+    try {
+      const updated = await updateUserName(id, nameDraft.trim())
+      setItems((prev) => prev.map((p) => (p.id === id ? updated : p)))
+      setEditingId(null)
+    } catch {
+      setError('No se pudo actualizar el nombre.')
     } finally {
       setSavingId(null)
     }
@@ -98,8 +118,35 @@ export function UsersSection() {
                 return (
                   <tr key={item.id} className="hover:bg-slate-50">
                     <td className="px-4 py-4 text-slate-700">
-                      {item.full_name || '—'}
-                      {isSelf && <span className="ml-2 text-xs text-slate-400">(vos)</span>}
+                      {editingId === item.id ? (
+                        <div className="flex items-center gap-2">
+                          <input
+                            autoFocus
+                            value={nameDraft}
+                            onChange={(e) => setNameDraft(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleSaveName(item.id)}
+                            className="h-9 w-40 rounded-xl border border-slate-200 px-2 text-sm"
+                          />
+                          <button
+                            className="text-xs text-teal-600 hover:underline disabled:opacity-40"
+                            disabled={savingId === item.id}
+                            onClick={() => handleSaveName(item.id)}
+                          >
+                            Guardar
+                          </button>
+                          <button className="text-xs text-slate-400 hover:underline" onClick={() => setEditingId(null)}>
+                            Cancelar
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <span>{item.full_name || '—'}</span>
+                          {isSelf && <span className="text-xs text-slate-400">(vos)</span>}
+                          <button className="text-xs text-slate-400 hover:text-teal-600 hover:underline" onClick={() => startEditName(item)}>
+                            Editar
+                          </button>
+                        </div>
+                      )}
                     </td>
                     <td className="px-4 py-4">
                       <Select

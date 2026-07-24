@@ -190,6 +190,11 @@ export function CashClosingSection() {
     )
   }
 
+  async function handleExportHistoryPdf() {
+    const { exportCashClosingHistoryPdf } = await import('../../utils/cashClosingPdf')
+    exportCashClosingHistoryPdf(history)
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -206,7 +211,7 @@ export function CashClosingSection() {
       {saved && <Alert variant="success">Caja del {date} cerrada correctamente.</Alert>}
       {!loading && draftCount > 0 && (
         <Alert variant="info">
-          Hay {draftCount} factura{draftCount === 1 ? '' : 's'} en borrador en el sistema (de cualquier fecha) — el cuadre solo
+          Hay {draftCount} factura{draftCount === 1 ? '' : 's'} en borrador en el sistema (de cualquier fecha) — la caja solo
           cuenta facturas ya emitidas. Revísalas en la pestaña "Facturas".
         </Alert>
       )}
@@ -340,8 +345,11 @@ export function CashClosingSection() {
 
           {history.length > 0 && (
             <div className="overflow-hidden rounded-3xl bg-white shadow-card">
-              <div className="border-b border-slate-100 px-5 py-3">
-                <h3 className="text-sm font-semibold text-midnight-950">Historial de cuadres</h3>
+              <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3">
+                <h3 className="text-sm font-semibold text-midnight-950">Historial de cierres de caja</h3>
+                <Button size="sm" variant="secondary" onClick={handleExportHistoryPdf}>
+                  Exportar PDF
+                </Button>
               </div>
               <div className="overflow-x-auto">
                 <Table

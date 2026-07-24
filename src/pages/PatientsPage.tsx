@@ -66,6 +66,11 @@ export function PatientsPage() {
     }
   }
 
+  async function handleDownloadIntakeForm() {
+    const { downloadPatientIntakePdf } = await import('../utils/patientIntakePdf')
+    downloadPatientIntakePdf()
+  }
+
   return (
     <AppShell title="Pacientes">
       <div className="space-y-6">
@@ -74,7 +79,12 @@ export function PatientsPage() {
             <h2 className="text-lg font-semibold text-midnight-950">Lista de pacientes</h2>
             <p className="text-sm text-slate-500">Registra, filtra y revisa historiales clínicos.</p>
           </div>
-          <Button onClick={() => setModalOpen(true)}>Nueva ficha</Button>
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={handleDownloadIntakeForm}>
+              Descargar ficha en blanco (PDF)
+            </Button>
+            <Button onClick={() => setModalOpen(true)}>Nueva ficha</Button>
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">

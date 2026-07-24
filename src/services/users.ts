@@ -23,3 +23,10 @@ export async function setUserActive(id: string, is_active: boolean) {
   void logAudit(is_active ? 'activate' : 'deactivate', 'profile', id, {})
   return data as Profile
 }
+
+export async function updateUserName(id: string, full_name: string) {
+  const { data, error } = await supabase.from('profiles').update({ full_name }).eq('id', id).select(PROFILE_SELECT).single()
+  if (error) throw error
+  void logAudit('rename', 'profile', id, { full_name })
+  return data as Profile
+}

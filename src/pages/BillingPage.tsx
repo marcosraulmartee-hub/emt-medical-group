@@ -79,7 +79,7 @@ export function BillingPage() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-lg font-semibold text-midnight-950">Facturación</h2>
-            <p className="text-sm text-slate-500">Cobros por sesión, paquetes de sesiones y cuadre de caja.</p>
+            <p className="text-sm text-slate-500">Cobros por sesión, paquetes de sesiones y caja diaria.</p>
           </div>
           {tab === 'invoices' && (
             <div className="flex gap-2">
