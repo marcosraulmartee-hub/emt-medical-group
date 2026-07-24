@@ -1717,3 +1717,30 @@ create policy cash_expenses_select on public.cash_expenses for select
 drop policy if exists cash_expenses_insert on public.cash_expenses;
 create policy cash_expenses_insert on public.cash_expenses for insert
   with check (public.current_app_role() in ('admin', 'recepcionista'));
+
+-- =====================================================================
+-- MIGRACIÓN 021 — Recepcionista puede VER (no crear/editar) el registro
+-- de Sesiones EMT, igual que admin y técnico. Antes tenía el permiso de
+-- página (`sessions.view`, ya copiado en la migración anterior) pero las
+-- políticas de las tablas seguían siendo admin/médico/técnico únicamente,
+-- así que la página le salía vacía. Se agregan políticas de SOLO LECTURA
+-- adicionales (las políticas de escritura existentes no cambian — sigue
+-- sin poder crear/editar sesiones, ciclos, equipos ni bobinas).
+-- Ejecutar este bloque completo en el SQL Editor de Supabase.
+-- =====================================================================
+
+drop policy if exists emt_sessions_select_recepcionista on public.emt_sessions;
+create policy emt_sessions_select_recepcionista on public.emt_sessions for select
+  using (public.current_app_role() in ('admin', 'medico', 'tecnico', 'recepcionista'));
+
+drop policy if exists treatment_cycles_select_recepcionista on public.treatment_cycles;
+create policy treatment_cycles_select_recepcionista on public.treatment_cycles for select
+  using (public.current_app_role() in ('admin', 'medico', 'tecnico', 'recepcionista'));
+
+drop policy if exists emt_equipment_select_recepcionista on public.emt_equipment;
+create policy emt_equipment_select_recepcionista on public.emt_equipment for select
+  using (public.current_app_role() in ('admin', 'medico', 'tecnico', 'recepcionista'));
+
+drop policy if exists emt_coils_select_recepcionista on public.emt_coils;
+create policy emt_coils_select_recepcionista on public.emt_coils for select
+  using (public.current_app_role() in ('admin', 'medico', 'tecnico', 'recepcionista'));

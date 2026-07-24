@@ -7,8 +7,11 @@ import type { SessionRecord } from '../services/sessions'
 import { listSessions } from '../services/sessions'
 import { SessionFormModal } from './sessions/SessionFormModal'
 import { computeCycleProgress } from '../utils/cycleProgress'
+import { useAuth } from '../hooks/useAuth'
 
 export function SessionsPage() {
+  const { profile } = useAuth()
+  const canRegister = profile?.role === 'admin' || profile?.role === 'medico' || profile?.role === 'tecnico'
   const [sessions, setSessions] = useState<SessionRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -39,7 +42,7 @@ export function SessionsPage() {
             <h2 className="text-lg font-semibold text-midnight-950">Registro de sesiones</h2>
             <p className="text-sm text-slate-500">Control técnico y clínico de cada sesión aplicada.</p>
           </div>
-          <Button onClick={() => setModalOpen(true)}>Registrar sesión</Button>
+          {canRegister && <Button onClick={() => setModalOpen(true)}>Registrar sesión</Button>}
         </div>
 
         <div className="overflow-hidden rounded-3xl bg-white shadow-card">
