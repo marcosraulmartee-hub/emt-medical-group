@@ -5,6 +5,7 @@ import { Button } from '../components/ui/Button'
 import { Table } from '../components/ui/Table'
 import { Input } from '../components/ui/Input'
 import { Badge } from '../components/ui/Badge'
+import { Alert } from '../components/ui/Alert'
 import { PatientCreateModal } from '../components/patients/PatientCreateModal'
 import type { Patient } from '../services/patients'
 import { listPatients } from '../services/patients'
@@ -23,6 +24,8 @@ export function PatientsPage() {
   const [search, setSearch] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [showDischarged, setShowDischarged] = useState(false)
+  const [pdfError, setPdfError] = useState('')
+  const [downloadingPdf, setDownloadingPdf] = useState(false)
   const [followUpOnly, setFollowUpOnly] = useState(
     () => new URLSearchParams(location.search).get('followup') === 'true',
   )
@@ -67,8 +70,18 @@ export function PatientsPage() {
   }
 
   async function handleDownloadIntakeForm() {
-    const { downloadPatientIntakePdf } = await import('../utils/patientIntakePdf')
-    downloadPatientIntakePdf()
+    setPdfError('')
+    setDownloadingPdf(true)
+    try {
+      const { downloadPatientIntakePdf } = await import('../utils/patientIntakePdf')
+      downloadPatientIntakePdf()
+    } catch {
+      setPdfError(
+        'No se pudo generar el PDF. Si la app estaba abierta desde antes de la última actualización, recargá la página (Ctrl+Shift+R) e intentá de nuevo.',
+      )
+    } finally {
+      setDownloadingPdf(false)
+    }
   }
 
   return (
@@ -80,12 +93,14 @@ export function PatientsPage() {
             <p className="text-sm text-slate-500">Registra, filtra y revisa historiales clínicos.</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="secondary" onClick={handleDownloadIntakeForm}>
+            <Button variant="secondary" onClick={handleDownloadIntakeForm} loading={downloadingPdf}>
               Descargar ficha en blanco (PDF)
             </Button>
             <Button onClick={() => setModalOpen(true)}>Nueva ficha</Button>
           </div>
         </div>
+
+        {pdfError && <Alert variant="error">{pdfError}</Alert>}
 
         <div className="flex flex-wrap items-center gap-3">
           <Input
