@@ -1,47 +1,51 @@
 import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 const NAVY: [number, number, number] = [4, 56, 96]
 const LEFT_X = 14
-const RIGHT_X = 109
-const COL_WIDTH = 87
-const PAGE_BOTTOM = 282
+const RIGHT_EDGE = 196
 
-function sectionTitle(doc: jsPDF, x: number, width: number, title: string, y: number): number {
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(9.5)
-  doc.setTextColor(...NAVY)
-  const lines = doc.splitTextToSize(title, width) as string[]
-  lines.forEach((line, i) => doc.text(line, x, y + i * 4.5))
-  doc.setTextColor(0, 0, 0)
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(8.5)
-  return y + lines.length * 4.5 + 3
+interface Question {
+  text: string
+  blankLine?: boolean
 }
 
-function checkboxItem(doc: jsPDF, x: number, width: number, text: string, y: number): number {
-  doc.rect(x, y - 2.8, 2.8, 2.8)
-  const lines = doc.splitTextToSize(text, width - 6) as string[]
-  lines.forEach((line, i) => doc.text(line, x + 5.5, y + i * 4))
-  return y + lines.length * 4 + 2
-}
+const QUESTIONS: Question[] = [
+  { text: '¿Ha tenido alguna vez una reacción adversa a la EMT? En caso afirmativo, descríbala.', blankLine: true },
+  { text: '¿Tiene epilepsia o ha sufrido alguna vez un episodio con convulsiones?' },
+  { text: '¿Tiene usted, o algún miembro de su familia, antecedentes de epilepsia o convulsiones?' },
+  { text: '¿Ha sufrido alguna vez un desmayo o síncope? En caso afirmativo, descríbalo.', blankLine: true },
+  { text: '¿Ha sufrido alguna vez un ictus?' },
+  { text: '¿Ha sufrido alguna vez un traumatismo craneal grave (con pérdida de conocimiento)?' },
+  { text: '¿Se ha sometido alguna vez a una intervención neuroquirúrgica de cualquier tipo (incluido cerebro o médula espinal)?' },
+  {
+    text: '¿Tiene algún dispositivo implantado como marcapasos cardíaco, desfibrilador implantado (DCI), desfibrilador portátil (DTC), estimuladores del nervio vago (VNS), clips de aneurisma, implantes cocleares, bomba de infusión, estimuladores cerebrales profundos (DBS), derivación CSF, vías intracardíacas, implantes dentales activados magnéticamente o implantes oculares ferromagnéticos?',
+  },
+  {
+    text: '¿Tiene algún metal en el cuerpo, como metralla, perdigones, balas, clips quirúrgicos, tatuajes faciales con tinta metálica o fragmentos de soldadura o metalurgia?',
+  },
+  {
+    text: '¿Tiene algún dispositivo portátil o implantado de administración automática de fármacos (por ejemplo, bomba de insulina), endoprótesis, filtros venosos, válvulas cardíacas artificiales, sistemas programables de derivación valvular, dispositivos de fijación de la columna cervical, suturas hechas con grapas u otros materiales metálicos, microchips implantados o implantes radiactivos?',
+  },
+  { text: '¿Sufre dolores de cabeza frecuentes o fuertes?' },
+  { text: '¿Le han diagnosticado alguna otra enfermedad neurológica o psiquiátrica?' },
+  { text: '¿Ha sufrido alguna enfermedad que le haya causado daño cerebral?' },
+  { text: '¿Tiene problemas de audición o algún síntoma de pitidos en los oídos?' },
+  {
+    text: '¿Está tomando algún medicamento psicoactivo? ¿Como medicación para la depresión, la ansiedad, antipsicóticos, estabilizadores del estado de ánimo, anticonvulsivos o cualquier otra medicación que afecte a su sistema nervioso? Enumérelos.',
+    blankLine: true,
+  },
+  {
+    text: '¿Está tomando algún otro medicamento o sustancia? Enumérelos. Si alguna de estas sustancias es ilegal, marque "sí" pero no escriba el nombre de la sustancia. Nos pondremos en contacto con usted confidencialmente para discutir en persona si la EMT será segura para usted.',
+    blankLine: true,
+  },
+  { text: '¿Está embarazada o tiene motivos para creer que puede estarlo?' },
+  { text: '¿Ha consumido alcohol en las últimas 24 horas?' },
+  { text: '¿Ha dormido lo suficiente esta noche?' },
+  { text: '¿Ha participado en algún estudio de EMT en las últimas 24 horas?' },
+]
 
-function drawColumn(doc: jsPDF, x: number, width: number, title: string, items: string[], startY: number): number {
-  let y = sectionTitle(doc, x, width, title, startY)
-  for (const item of items) {
-    y = checkboxItem(doc, x, width, item, y)
-  }
-  return y
-}
-
-function drawBox(doc: jsPDF, x: number, y: number, width: number, height: number) {
-  doc.setDrawColor(200, 200, 200)
-  doc.rect(x, y, width, height)
-  doc.setDrawColor(0, 0, 0)
-}
-
-export function downloadConsentPdf() {
-  const doc = new jsPDF()
-
+function drawHeader(doc: jsPDF) {
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(20)
   doc.setTextColor(...NAVY)
@@ -53,162 +57,95 @@ export function downloadConsentPdf() {
   doc.text('Santiago de los Caballeros, República Dominicana.', 105, 32, { align: 'center' })
   doc.text('Tel: (809) 330-1538   |   WhatsApp: (809) 570-8705', 105, 37, { align: 'center' })
   doc.text('www.emtmedicalgroup.do   |   emtmedicalgroup@gmail.com', 105, 42, { align: 'center' })
-
   doc.setTextColor(0, 0, 0)
+}
+
+function checkbox(doc: jsPDF, x: number, y: number, label: string) {
+  doc.rect(x, y - 2.8, 2.8, 2.8)
+  doc.text(label, x + 4.5, y)
+}
+
+export function downloadConsentPdf() {
+  const doc = new jsPDF()
+
+  drawHeader(doc)
+
   doc.setFont('helvetica', 'bold')
-  doc.setFontSize(15)
-  doc.text('CONSENTIMIENTO INFORMADO', 105, 53, { align: 'center' })
-  doc.setFontSize(11)
-  doc.text('PARA ESTIMULACIÓN MAGNÉTICA TRANSCRANEAL (EMT)', 105, 60, { align: 'center' })
+  doc.setFontSize(13)
+  doc.text('CUESTIONARIO DE CRIBADO DE SEGURIDAD', 105, 53, { align: 'center' })
+  doc.text('PARA ESTIMULACIÓN MAGNÉTICA TRANSCRANEAL (EMT)', 105, 59, { align: 'center' })
 
   let y = 70
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(9.5)
-  doc.text('Paciente: ______________________________________________', LEFT_X, y)
-  doc.text('Fecha: _____ / _____ / _____', RIGHT_X, y)
+  doc.text('Participante Nombre/ID: ________________________________________________', LEFT_X, y)
   y += 7
-  doc.text('Documento de identidad: ____________________________', LEFT_X, y)
-  doc.text('Médico tratante: ___________________________', RIGHT_X, y)
+  doc.text('Edad actual: __________ (años)', LEFT_X, y)
   y += 7
-  doc.text('Fecha de nacimiento: _____ / _____ / _____', LEFT_X, y)
-  doc.text('Diagnóstico: ___________________________', RIGHT_X, y)
-  y += 9
+  doc.text('Lateralidad:', LEFT_X, y)
+  checkbox(doc, LEFT_X + 20, y, 'Zurdo')
+  checkbox(doc, LEFT_X + 45, y, 'Diestro')
+  checkbox(doc, LEFT_X + 72, y, 'Ambidiestro')
+  y += 7
+  doc.text('Sexo:', LEFT_X, y)
+  checkbox(doc, LEFT_X + 12, y, 'M')
+  checkbox(doc, LEFT_X + 25, y, 'F')
+  checkbox(doc, LEFT_X + 38, y, 'Otro')
+  y += 8
 
-  let leftY = y
-  let rightY = y
-
-  leftY = drawColumn(doc, LEFT_X, COL_WIDTH, '1. INFORMACIÓN SOBRE EL PROCEDIMIENTO', [
-    'Comprendo que la EMT es un procedimiento médico no invasivo.',
-    'Comprendo que utiliza pulsos magnéticos aplicados sobre determinadas regiones cerebrales.',
-    'Comprendo que el procedimiento no requiere anestesia.',
-    'Comprendo que permaneceré despierto durante las sesiones.',
-    'He tenido oportunidad de realizar preguntas y recibir respuestas satisfactorias.',
-  ], leftY)
-
-  rightY = drawColumn(doc, RIGHT_X, COL_WIDTH, '2. BENEFICIOS Y EXPECTATIVAS', [
-    'La EMT puede contribuir a la mejoría de mis síntomas.',
-    'La respuesta al tratamiento puede variar entre pacientes.',
-    'No se me ha garantizado curación ni resultados específicos.',
-    'No se me ha garantizado remisión total de la enfermedad.',
-  ], rightY)
-
-  y = Math.max(leftY, rightY) + 4
-  leftY = y
-  rightY = y
-
-  leftY = drawColumn(doc, LEFT_X, COL_WIDTH, '3. ALTERNATIVAS TERAPÉUTICAS EXPLICADAS', [
-    'Tratamiento farmacológico.',
-    'Psicoterapia.',
-    'Continuación del tratamiento actual.',
-    'Otras alternativas médicamente apropiadas según mi condición clínica.',
-  ], leftY)
-
-  rightY = drawColumn(doc, RIGHT_X, COL_WIDTH, '4. POSIBLES EFECTOS ADVERSOS Y RIESGOS', [
-    'Molestias o dolor leve en el cuero cabelludo.',
-    'Cefalea transitoria.',
-    'Sensación de hormigueo facial.',
-    'Fatiga posterior a la sesión.',
-    'Mareos pasajeros.',
-    'Empeoramiento temporal de síntomas.',
-    'Riesgo extremadamente bajo de convulsión aun siguiendo protocolos de seguridad.',
-  ], rightY)
-
-  y = Math.max(leftY, rightY) + 4
-  leftY = y
-  rightY = y
-
-  leftY = drawColumn(doc, LEFT_X, COL_WIDTH, '5. DECLARACIÓN DE SEGURIDAD', [
-    'Marcapasos u otro dispositivo electrónico implantado.',
-    'Implantes metálicos en cabeza o cuello.',
-    'Clips aneurismáticos.',
-    'Implante coclear.',
-    'Antecedentes de epilepsia o convulsiones.',
-    'Embarazo o sospecha de embarazo.',
-    'Cirugía neurológica previa.',
-    'Otra condición médica relevante.',
-  ], leftY)
-
-  rightY = drawColumn(doc, RIGHT_X, COL_WIDTH, '6. INFORMACIÓN ECONÓMICA', [
-    'Se me ha explicado el costo del tratamiento.',
-    'Se me ha explicado el número estimado de sesiones.',
-    'Comprendo las condiciones de pago establecidas por EMT Médica Group, S.R.L.',
-  ], rightY)
-
-  y = Math.max(leftY, rightY) + 4
-  if (y > PAGE_BOTTOM - 60) {
-    doc.addPage()
-    y = 20
-  }
-
-  y = sectionTitle(doc, LEFT_X, 182, '7. AUTORIZACIÓN Y VOLUNTARIEDAD', y)
-  for (const item of [
-    'He recibido información suficiente sobre beneficios, riesgos y alternativas.',
-    'He comprendido la información recibida.',
-    'Mi participación es voluntaria.',
-    'Puedo retirar mi consentimiento y suspender el tratamiento en cualquier momento.',
-    'Autorizo el registro y almacenamiento de mi información clínica para fines asistenciales y de seguimiento médico.',
-    'Autorizo voluntariamente la realización del tratamiento mediante Estimulación Magnética Transcraneal (EMT).',
-  ]) {
-    y = checkboxItem(doc, LEFT_X, 182, item, y)
-  }
-
-  y += 3
-  y = sectionTitle(doc, LEFT_X, 182, '8. DECLARACIÓN FINAL', y)
-  doc.setFont('helvetica', 'italic')
-  const finalText = doc.splitTextToSize(
-    'Declaro que he leído este documento o me ha sido leído íntegramente, que he comprendido su contenido y que otorgo mi consentimiento libre y voluntario para la realización del procedimiento descrito.',
-    182,
-  ) as string[]
-  finalText.forEach((line, i) => doc.text(line, LEFT_X, y + i * 4.5))
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(9)
+  doc.text('TODA LA INFORMACIÓN SERÁ TRATADA CONFIDENCIALMENTE', LEFT_X, y)
   doc.setFont('helvetica', 'normal')
-  y += finalText.length * 4.5 + 10
+  y += 4
 
-  if (y > PAGE_BOTTOM - 35) {
-    doc.addPage()
-    y = 20
-  }
-
-  const sigWidth = 44
-  const sigGap = 4
-  const sigLabels = ['FIRMA DEL PACIENTE', 'FIRMA DEL REPRESENTANTE LEGAL\n(Si aplica)', 'FIRMA DEL MÉDICO TRATANTE', 'FIRMA DEL TÉCNICO EMT\n/ TESTIGO INSTITUCIONAL']
-  const sigFields = [
-    ['Nombre: ______________', 'Documento de identidad: ____'],
-    ['Nombre: ______________', 'Documento de identidad: ____', 'Parentesco: ___________'],
-    ['Nombre: ______________', 'Exequátur: ____________'],
-    ['Nombre: ______________', 'Certificación: __________'],
-  ]
-
-  sigLabels.forEach((label, idx) => {
-    const x = LEFT_X + idx * (sigWidth + sigGap)
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(7)
-    const labelLines = label.split('\n')
-    labelLines.forEach((line, i) => doc.text(line, x, y + i * 3.2, { maxWidth: sigWidth }))
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(7.5)
-    let fy = y + labelLines.length * 3.2 + 10
-    for (const field of sigFields[idx]) {
-      const lines = doc.splitTextToSize(field, sigWidth) as string[]
-      lines.forEach((line) => {
-        doc.text(line, x, fy)
-        fy += 3.5
-      })
-    }
+  autoTable(doc, {
+    startY: y,
+    margin: { left: LEFT_X, right: 14 },
+    head: [['#', 'Pregunta', 'Sí', 'No']],
+    body: QUESTIONS.map((q, i) => [
+      String(i + 1),
+      q.blankLine ? `${q.text}\n\n_______________________________________________` : q.text,
+      '',
+      '',
+    ]),
+    styles: { fontSize: 8.5, cellPadding: 2.5, valign: 'middle', lineColor: [180, 180, 180] },
+    headStyles: { fillColor: NAVY, textColor: 255, fontStyle: 'bold' },
+    columnStyles: {
+      0: { cellWidth: 7, halign: 'center' },
+      1: { cellWidth: 151 },
+      2: { cellWidth: 12, halign: 'center' },
+      3: { cellWidth: 12, halign: 'center' },
+    },
+    didDrawCell: (data) => {
+      if (data.section === 'body' && (data.column.index === 2 || data.column.index === 3)) {
+        const size = 3
+        const cx = data.cell.x + data.cell.width / 2 - size / 2
+        const cy = data.cell.y + data.cell.height / 2 - size / 2
+        doc.setDrawColor(90, 90, 90)
+        doc.rect(cx, cy, size, size)
+      }
+    },
   })
 
-  y += 42
-  drawBox(doc, LEFT_X, y, 182, 8)
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(8)
-  doc.setTextColor(255, 255, 255)
-  doc.setFillColor(...NAVY)
-  doc.rect(LEFT_X, y, 182, 8, 'F')
-  doc.setTextColor(255, 255, 255)
-  doc.text('Este consentimiento forma parte integral de la historia clínica del paciente.', 105, y + 5.5, { align: 'center' })
-  doc.setTextColor(0, 0, 0)
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(7)
-  doc.text('REV. 05/2025', 196 - 14, y + 14, { align: 'right' })
+  const finalY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY
 
-  doc.save('consentimiento-informado-emt-medica-group.pdf')
+  let sigY = finalY + 16
+  if (sigY > 270) {
+    doc.addPage()
+    sigY = 30
+  }
+  doc.setFontSize(9.5)
+  doc.text('Firmado _________________________ / _________________________', LEFT_X, sigY)
+  doc.text('Fecha ____________________', RIGHT_EDGE - 55, sigY)
+
+  doc.setFontSize(7.5)
+  doc.setTextColor(120, 120, 120)
+  doc.text(
+    'Este cuestionario forma parte de la evaluación de seguridad previa al tratamiento con EMT y de la historia clínica del paciente.',
+    LEFT_X,
+    sigY + 10,
+  )
+
+  doc.save('cuestionario-cribado-seguridad-emt-medica-group.pdf')
 }

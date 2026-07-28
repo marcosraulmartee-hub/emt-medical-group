@@ -72,6 +72,18 @@ export function ProtocolsPage() {
     return categories.find((c) => c.code === code)?.label ?? code
   }
 
+  const groupedByCategory = useMemo(() => {
+    const groups = new Map<string, Protocol[]>()
+    for (const protocol of filtered) {
+      const list = groups.get(protocol.category) ?? []
+      list.push(protocol)
+      groups.set(protocol.category, list)
+    }
+    return Array.from(groups.entries())
+      .map(([code, list]) => ({ code, label: categoryLabel(code), protocols: list.sort((a, b) => a.name.localeCompare(b.name)) }))
+      .sort((a, b) => a.label.localeCompare(b.label))
+  }, [filtered, categories])
+
   function openCreate() {
     setEditingId(null)
     setForm({ ...emptyForm, category: categories[0]?.code ?? '' })
@@ -149,39 +161,48 @@ export function ProtocolsPage() {
           className="sm:max-w-sm"
         />
 
-        <div className="overflow-hidden rounded-3xl bg-white shadow-card">
-          {loading ? (
-            <div className="p-6 text-slate-500">Cargando protocolos...</div>
-          ) : error ? (
-            <div className="p-6 text-red-600">{error}</div>
-          ) : filtered.length === 0 ? (
-            <div className="p-6 text-slate-500">No hay protocolos cargados.</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table
-                headers={['Nombre', 'Categoría', 'Diagnóstico', 'Versión', 'Estado', '']}
-                rows={filtered.map((protocol) => (
-                  <tr key={protocol.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-4 text-slate-700">{protocol.name}</td>
-                    <td className="px-4 py-4 text-slate-500">{categoryLabel(protocol.category)}</td>
-                    <td className="px-4 py-4 text-slate-500">{protocol.diagnosis || '—'}</td>
-                    <td className="px-4 py-4 text-slate-500">{protocol.version}</td>
-                    <td className="px-4 py-4">
-                      <Badge tone={protocol.is_active ? 'success' : 'neutral'}>
-                        {protocol.is_active ? 'Activo' : 'Inactivo'}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-4 text-right">
-                      <button className="text-sm text-teal-600 hover:underline" onClick={() => openEdit(protocol)}>
-                        Editar
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              />
-            </div>
-          )}
-        </div>
+        {loading ? (
+          <div className="rounded-3xl bg-white p-6 text-slate-500 shadow-card">Cargando protocolos...</div>
+        ) : error ? (
+          <div className="rounded-3xl bg-white p-6 text-red-600 shadow-card">{error}</div>
+        ) : filtered.length === 0 ? (
+          <div className="rounded-3xl bg-white p-6 text-slate-500 shadow-card">No hay protocolos cargados.</div>
+        ) : (
+          <div className="space-y-5">
+            {groupedByCategory.map((group) => (
+              <div key={group.code} className="overflow-hidden rounded-3xl bg-white shadow-card">
+                <div className="border-b border-slate-100 bg-slate-50 px-5 py-3">
+                  <h3 className="text-sm font-semibold text-midnight-950">{group.label}</h3>
+                  <p className="text-xs text-slate-400">
+                    {group.protocols.length} {group.protocols.length === 1 ? 'protocolo' : 'protocolos'}
+                  </p>
+                </div>
+                <div className="overflow-x-auto">
+                  <Table
+                    headers={['Nombre', 'Diagnóstico', 'Versión', 'Estado', '']}
+                    rows={group.protocols.map((protocol) => (
+                      <tr key={protocol.id} className="hover:bg-slate-50">
+                        <td className="px-4 py-4 text-slate-700">{protocol.name}</td>
+                        <td className="px-4 py-4 text-slate-500">{protocol.diagnosis || '—'}</td>
+                        <td className="px-4 py-4 text-slate-500">{protocol.version}</td>
+                        <td className="px-4 py-4">
+                          <Badge tone={protocol.is_active ? 'success' : 'neutral'}>
+                            {protocol.is_active ? 'Activo' : 'Inactivo'}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-4 text-right">
+                          <button className="text-sm text-teal-600 hover:underline" onClick={() => openEdit(protocol)}>
+                            Editar
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <Modal
