@@ -1767,3 +1767,17 @@ create policy patients_all on public.patients for all
 drop policy if exists patients_select_tecnico on public.patients;
 create policy patients_select_tecnico on public.patients for select
   using (public.current_app_role() = 'tecnico');
+
+-- =====================================================================
+-- MIGRACIÓN 023 — Permitir agregar/editar protocolos a todos los roles
+-- que ven la Biblioteca de Protocolos (admin, médico, técnico), no solo
+-- admin. El botón "Nuevo protocolo" / "Editar" ya aparecía en pantalla
+-- para los tres roles, pero la política de escritura era admin-only, así
+-- que a médico y técnico les fallaba en silencio. Se amplía la política.
+-- Ejecutar este bloque completo en el SQL Editor de Supabase.
+-- =====================================================================
+
+drop policy if exists protocols_write on public.protocols;
+create policy protocols_write on public.protocols for all
+  using (public.current_app_role() in ('admin', 'medico', 'tecnico'))
+  with check (public.current_app_role() in ('admin', 'medico', 'tecnico'));
