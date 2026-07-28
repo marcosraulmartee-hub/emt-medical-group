@@ -6,6 +6,7 @@ import { Select } from '../../components/ui/Select'
 import { Textarea } from '../../components/ui/Textarea'
 import { Alert } from '../../components/ui/Alert'
 import { ChecklistForm } from './ChecklistForm'
+import { HeadMap1020 } from '../../components/sessions/HeadMap1020'
 import { useAuth } from '../../hooks/useAuth'
 import type { Patient } from '../../services/patients'
 import { listPatients } from '../../services/patients'
@@ -60,12 +61,14 @@ export function SessionFormModal({ open, onClose, onCreated }: { open: boolean; 
   const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [showHeadMap, setShowHeadMap] = useState(false)
 
   useEffect(() => {
     if (!open) return
     setForm(emptyForm)
     setAnswers({})
     setError('')
+    setShowHeadMap(false)
     Promise.all([listPatients(), listProtocols(), listEquipment(), listCoils(), listActiveChecklistItems()])
       .then(([p, pr, eq, co, items]) => {
         setPatients(p)
@@ -254,7 +257,17 @@ export function SessionFormModal({ open, onClose, onCreated }: { open: boolean; 
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Input label="Región estimulada" value={form.stimulated_region} onChange={(e) => setForm({ ...form, stimulated_region: e.target.value })} />
+          <div className="flex items-end gap-2">
+            <Input
+              label="Región estimulada"
+              value={form.stimulated_region}
+              onChange={(e) => setForm({ ...form, stimulated_region: e.target.value })}
+              className="flex-1"
+            />
+            <Button type="button" variant="secondary" onClick={() => setShowHeadMap((v) => !v)}>
+              {showHeadMap ? 'Ocultar mapa' : 'Marcar en mapa 10-20'}
+            </Button>
+          </div>
           <Select label="Lateralidad" value={form.laterality} onChange={(e) => setForm({ ...form, laterality: e.target.value })}>
             <option value="">Sin especificar</option>
             <option value="izquierda">Izquierda</option>
@@ -262,6 +275,13 @@ export function SessionFormModal({ open, onClose, onCreated }: { open: boolean; 
             <option value="bilateral">Bilateral</option>
           </Select>
         </div>
+
+        {showHeadMap && (
+          <HeadMap1020
+            value={form.stimulated_region}
+            onSelect={(code, laterality) => setForm({ ...form, stimulated_region: code, laterality: laterality || form.laterality })}
+          />
+        )}
 
         <div className="grid gap-4 sm:grid-cols-3">
           <Input
