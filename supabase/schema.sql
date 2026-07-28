@@ -1744,3 +1744,26 @@ create policy emt_equipment_select_recepcionista on public.emt_equipment for sel
 drop policy if exists emt_coils_select_recepcionista on public.emt_coils;
 create policy emt_coils_select_recepcionista on public.emt_coils for select
   using (public.current_app_role() in ('admin', 'medico', 'tecnico', 'recepcionista'));
+
+-- =====================================================================
+-- MIGRACIÓN 022 — Técnico deja de tener permiso de escritura sobre la
+-- ficha administrativa del paciente (nombre, contacto, dirección, etc.).
+-- La política "patients_all" original incluía a técnico en for all
+-- (select/insert/update/delete), lo cual no coincide con el diseño
+-- previsto ("técnico solo registra sesiones, no edita datos de
+-- pacientes"). Hoy no era explotable desde la UI porque la página de
+-- Pacientes está oculta para su rol, pero es un hueco de seguridad a
+-- nivel de base de datos. Se reduce "patients_all" a admin/médico/
+-- recepcionista y se agrega una política de solo lectura para técnico
+-- (la necesita para elegir paciente al registrar una sesión).
+-- Ejecutar este bloque completo en el SQL Editor de Supabase.
+-- =====================================================================
+
+drop policy if exists patients_all on public.patients;
+create policy patients_all on public.patients for all
+  using (public.current_app_role() in ('admin', 'medico', 'recepcionista'))
+  with check (public.current_app_role() in ('admin', 'medico', 'recepcionista'));
+
+drop policy if exists patients_select_tecnico on public.patients;
+create policy patients_select_tecnico on public.patients for select
+  using (public.current_app_role() = 'tecnico');

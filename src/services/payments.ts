@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { logAudit } from './audit'
 
 export interface Payment {
   id: string
@@ -19,12 +20,16 @@ export async function listPaymentsForInvoice(invoiceId: string) {
 }
 
 export async function addPayment(payload: { invoice_id: string; amount: number; method: string; reference: string }) {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   const { data, error } = await supabase
     .from('payments')
-    .insert({ ...payload, reference: payload.reference || null })
+    .insert({ ...payload, reference: payload.reference || null, registered_by: user?.id })
     .select(SELECT)
     .single()
   if (error) throw error
+  void logAudit('create', 'payment', data.id, { invoice_id: payload.invoice_id, amount: payload.amount, method: payload.method })
   return data as Payment
 }
 

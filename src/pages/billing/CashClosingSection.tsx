@@ -100,6 +100,7 @@ export function CashClosingSection() {
   const countedCashNumber = countedCash === '' ? null : Number(countedCash)
   const difference = countedCashNumber === null ? null : countedCashNumber - totals.total_efectivo
   const isOpen = register?.status === 'open'
+  const isReopening = register?.status === 'closed'
 
   const movements = [
     ...payments.map((p) => ({
@@ -375,26 +376,35 @@ export function CashClosingSection() {
 
       <Modal
         open={openModalOpen}
-        title="Abrir caja"
+        title={isReopening ? 'Reabrir caja' : 'Abrir caja'}
         onClose={() => setOpenModalOpen(false)}
         footer={
           <>
             <Button variant="secondary" onClick={() => setOpenModalOpen(false)} disabled={opening}>
               Cancelar
             </Button>
-            <Button onClick={handleOpenRegister} loading={opening}>
-              Abrir caja
+            <Button variant={isReopening ? 'danger' : 'primary'} onClick={handleOpenRegister} loading={opening}>
+              {isReopening ? 'Reabrir de todos modos' : 'Abrir caja'}
             </Button>
           </>
         }
       >
-        <Input
-          label="Monto inicial en caja (efectivo)"
-          type="number"
-          helper="El fondo con el que arranca la caja hoy — normalmente 0 si no se deja base fija."
-          value={openingAmount}
-          onChange={(e) => setOpeningAmount(e.target.value)}
-        />
+        <div className="space-y-4">
+          {isReopening && (
+            <Alert variant="error">
+              Este día ({date}) ya fue cerrado y cuadrado. Reabrirlo permite registrar nuevos egresos sobre un día ya
+              reconciliado — el historial de cierres no se borra, pero el "Balance final" ya cuadrado dejará de coincidir
+              hasta que vuelvas a cerrar la caja.
+            </Alert>
+          )}
+          <Input
+            label="Monto inicial en caja (efectivo)"
+            type="number"
+            helper="El fondo con el que arranca la caja hoy — normalmente 0 si no se deja base fija."
+            value={openingAmount}
+            onChange={(e) => setOpeningAmount(e.target.value)}
+          />
+        </div>
       </Modal>
 
       <Modal
