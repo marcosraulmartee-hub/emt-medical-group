@@ -42,6 +42,8 @@ export function ProtocolsPage() {
   const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
+  const [exportingExcel, setExportingExcel] = useState(false)
+  const [exportError, setExportError] = useState('')
 
   async function load() {
     setLoading(true)
@@ -83,6 +85,33 @@ export function ProtocolsPage() {
       .map(([code, list]) => ({ code, label: categoryLabel(code), protocols: list.sort((a, b) => a.name.localeCompare(b.name)) }))
       .sort((a, b) => a.label.localeCompare(b.label))
   }, [filtered, categories])
+
+  async function handleExportExcel() {
+    setExportingExcel(true)
+    setExportError('')
+    try {
+      const XLSX = await import('xlsx')
+      const rows = filtered.map((p) => ({
+        Nombre: p.name,
+        Categoría: categoryLabel(p.category),
+        Diagnóstico: p.diagnosis || '',
+        Indicación: p.indication || '',
+        'Parámetros técnicos': p.technical_parameters || '',
+        Contraindicaciones: p.contraindications || '',
+        'Nivel de evidencia': p.evidence_level || '',
+        Versión: p.version || '',
+        Estado: p.is_active ? 'Activo' : 'Inactivo',
+      }))
+      const worksheet = XLSX.utils.json_to_sheet(rows)
+      const workbook = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Protocolos')
+      XLSX.writeFile(workbook, `protocolos_${new Date().toISOString().slice(0, 10)}.xlsx`)
+    } catch {
+      setExportError('No se pudo generar el Excel. Recargá la página e intentá de nuevo.')
+    } finally {
+      setExportingExcel(false)
+    }
+  }
 
   function openCreate() {
     setEditingId(null)
@@ -144,8 +173,15 @@ export function ProtocolsPage() {
             <h2 className="text-lg font-semibold text-midnight-950">Protocolos EMT</h2>
             <p className="text-sm text-slate-500">rTMS, iTBS, cTBS y demás técnicas de neuromodulación.</p>
           </div>
-          <Button onClick={openCreate}>Nuevo protocolo</Button>
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={handleExportExcel} loading={exportingExcel} disabled={filtered.length === 0}>
+              Exportar Excel
+            </Button>
+            <Button onClick={openCreate}>Nuevo protocolo</Button>
+          </div>
         </div>
+
+        {exportError && <Alert variant="error">{exportError}</Alert>}
 
         {categories.length === 0 && !loading && (
           <Alert variant="info">

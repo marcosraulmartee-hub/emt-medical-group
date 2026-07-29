@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import * as XLSX from 'xlsx'
 import { AppShell } from '../components/layout/AppShell'
 import { Button } from '../components/ui/Button'
 import { Table } from '../components/ui/Table'
@@ -56,7 +55,8 @@ export function BillingPage() {
     exportInvoiceListPdf(invoices)
   }
 
-  function exportExcel() {
+  async function exportExcel() {
+    const XLSX = await import('xlsx')
     const rows = invoices.map((inv) => ({
       'No. Factura': inv.invoice_number ?? '',
       Paciente: inv.patient?.full_name ?? '',

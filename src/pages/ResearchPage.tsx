@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import * as XLSX from 'xlsx'
 import { AppShell } from '../components/layout/AppShell'
 import { Button } from '../components/ui/Button'
 import { Alert } from '../components/ui/Alert'
@@ -48,6 +47,7 @@ export function ResearchPage() {
         setError('Ningún paciente tiene consentimiento de investigación activo todavía.')
         return
       }
+      const XLSX = await import('xlsx')
       const worksheet = XLSX.utils.json_to_sheet(anonRows)
       const workbook = XLSX.utils.book_new()
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Investigación')

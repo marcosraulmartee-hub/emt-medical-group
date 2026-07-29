@@ -26,6 +26,7 @@ export function PatientsPage() {
   const [showDischarged, setShowDischarged] = useState(false)
   const [pdfError, setPdfError] = useState('')
   const [downloadingPdf, setDownloadingPdf] = useState(false)
+  const [exportingExcel, setExportingExcel] = useState(false)
   const [followUpOnly, setFollowUpOnly] = useState(
     () => new URLSearchParams(location.search).get('followup') === 'true',
   )
@@ -69,6 +70,39 @@ export function PatientsPage() {
     }
   }
 
+  async function handleExportExcel() {
+    setExportingExcel(true)
+    setPdfError('')
+    try {
+      const XLSX = await import('xlsx')
+      const rows = filtered.map((p) => ({
+        Nombre: p.full_name,
+        Email: p.email || '',
+        Teléfono: p.phone || '',
+        Estado: p.status === 'discharged' ? 'Dado de alta' : 'Activo',
+        'Fecha de nacimiento': p.birth_date || '',
+        Género: p.gender || '',
+        Cédula: p.national_id || '',
+        Dirección: p.address || '',
+        Ciudad: p.city || '',
+        Ocupación: p.occupation || '',
+        'Estado civil': p.marital_status || '',
+        'Contacto de emergencia': p.emergency_contact_name || '',
+        'Teléfono de emergencia': p.emergency_contact_phone || '',
+        'Referido por': p.referred_by || '',
+        'Seguro médico': p.insurance_provider || '',
+      }))
+      const worksheet = XLSX.utils.json_to_sheet(rows)
+      const workbook = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Pacientes')
+      XLSX.writeFile(workbook, `pacientes_${new Date().toISOString().slice(0, 10)}.xlsx`)
+    } catch {
+      setPdfError('No se pudo generar el Excel. Recargá la página e intentá de nuevo.')
+    } finally {
+      setExportingExcel(false)
+    }
+  }
+
   async function handleDownloadIntakeForm() {
     setPdfError('')
     setDownloadingPdf(true)
@@ -92,7 +126,10 @@ export function PatientsPage() {
             <h2 className="text-lg font-semibold text-midnight-950">Lista de pacientes</h2>
             <p className="text-sm text-slate-500">Registra, filtra y revisa historiales clínicos.</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <Button variant="secondary" onClick={handleExportExcel} loading={exportingExcel} disabled={filtered.length === 0}>
+              Exportar Excel
+            </Button>
             <Button variant="secondary" onClick={handleDownloadIntakeForm} loading={downloadingPdf}>
               Descargar ficha en blanco (PDF)
             </Button>

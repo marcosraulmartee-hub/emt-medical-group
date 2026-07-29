@@ -5,6 +5,7 @@ import { Button } from '../components/ui/Button'
 import { Table } from '../components/ui/Table'
 import { Badge } from '../components/ui/Badge'
 import { Input } from '../components/ui/Input'
+import { Alert } from '../components/ui/Alert'
 import type { SessionRecord } from '../services/sessions'
 import { listSessions } from '../services/sessions'
 import { SessionFormModal } from './sessions/SessionFormModal'
@@ -28,6 +29,8 @@ export function SessionsPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [openPatientId, setOpenPatientId] = useState<string | null>(null)
+  const [exportingExcel, setExportingExcel] = useState(false)
+  const [exportError, setExportError] = useState('')
 
   async function load() {
     setLoading(true)
@@ -69,6 +72,40 @@ export function SessionsPage() {
     return folders.filter((folder) => folder.patientName.toLowerCase().includes(term))
   }, [folders, search])
 
+  async function handleExportExcel() {
+    setExportingExcel(true)
+    setExportError('')
+    try {
+      const XLSX = await import('xlsx')
+      const rows = filteredFolders.flatMap((folder) =>
+        folder.sessions.map((session) => ({
+          Paciente: folder.patientName,
+          Fecha: session.date,
+          Hora: session.start_time?.slice(0, 5) ?? '',
+          Protocolo: session.protocol?.name ?? '',
+          Equipo: session.equipment?.name ?? '',
+          Bobina: session.coil?.name ?? '',
+          'Región estimulada': session.stimulated_region || '',
+          Lateralidad: session.laterality || '',
+          'Frecuencia (Hz)': session.frequency_hz ?? '',
+          'Intensidad (%)': session.intensity_pct ?? '',
+          'Duración (min)': session.duration_minutes ?? '',
+          Ciclo: progressBySession.get(session.id) ?? '',
+          'Eventos adversos': session.adverse_events || 'No',
+          Notas: session.notes || '',
+        })),
+      )
+      const worksheet = XLSX.utils.json_to_sheet(rows)
+      const workbook = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Sesiones')
+      XLSX.writeFile(workbook, `sesiones_${new Date().toISOString().slice(0, 10)}.xlsx`)
+    } catch {
+      setExportError('No se pudo generar el Excel. Recargá la página e intentá de nuevo.')
+    } finally {
+      setExportingExcel(false)
+    }
+  }
+
   return (
     <AppShell title="Sesiones EMT">
       <div className="space-y-6">
@@ -77,8 +114,15 @@ export function SessionsPage() {
             <h2 className="text-lg font-semibold text-midnight-950">Registro de sesiones</h2>
             <p className="text-sm text-slate-500">Control técnico y clínico de cada sesión aplicada, agrupado por paciente.</p>
           </div>
-          {canRegister && <Button onClick={() => setModalOpen(true)}>Registrar sesión</Button>}
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={handleExportExcel} loading={exportingExcel} disabled={sessions.length === 0}>
+              Exportar Excel
+            </Button>
+            {canRegister && <Button onClick={() => setModalOpen(true)}>Registrar sesión</Button>}
+          </div>
         </div>
+
+        {exportError && <Alert variant="error">{exportError}</Alert>}
 
         <div className="relative sm:max-w-sm">
           <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
