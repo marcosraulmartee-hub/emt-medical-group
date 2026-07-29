@@ -18,6 +18,7 @@ import { SessionsPage } from './pages/SessionsPage'
 import { BillingPage } from './pages/BillingPage'
 import { ResearchPage } from './pages/ResearchPage'
 import { ReportsPage } from './pages/ReportsPage'
+import { StatsPage } from './pages/StatsPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { AuditPage } from './pages/AuditPage'
 
@@ -60,6 +61,9 @@ export default function App() {
             </Route>
             <Route element={<PermissionRoute perm="reports.view" />}>
               <Route path="/reports" element={<ReportsPage />} />
+            </Route>
+            <Route element={<PermissionRoute perm="stats.view" />}>
+              <Route path="/stats" element={<StatsPage />} />
             </Route>
             <Route element={<RoleRoute allow={['admin']} />}>
               <Route path="/settings" element={<SettingsPage />} />

@@ -7,6 +7,7 @@ import { BarTrendChart } from '../components/dashboard/BarTrendChart'
 import { TmsInfoCard } from '../components/dashboard/TmsInfoCard'
 import { RemindersCard } from '../components/dashboard/RemindersCard'
 import { PendingActionsCard } from '../components/dashboard/PendingActionsCard'
+import { CancelledAppointmentsCard } from '../components/dashboard/CancelledAppointmentsCard'
 import { useAuth } from '../hooks/useAuth'
 import { countPatients } from '../services/patients'
 import { countActiveCycles } from '../services/treatmentCycles'
@@ -143,6 +144,12 @@ export function DashboardPage() {
           <div className="grid gap-6 lg:grid-cols-2">
             {can('agenda.view') && <PendingActionsCard showFollowUp={can('patients.view')} />}
             {can('reminders.view') && <RemindersCard />}
+          </div>
+        )}
+
+        {can('stats.view') && (
+          <div className="grid gap-6 lg:grid-cols-2">
+            <CancelledAppointmentsCard />
           </div>
         )}
 

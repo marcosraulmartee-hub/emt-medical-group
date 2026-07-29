@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
+  BarChart3,
   CalendarDays,
   ChartBar,
   ClipboardList,
@@ -43,6 +44,7 @@ const groups: { title: string; items: NavItem[] }[] = [
       { to: '/research', label: 'Investigación', icon: ChartBar, perm: 'research.view' },
       { to: '/billing', label: 'Facturación', icon: Receipt, perm: 'billing.view' },
       { to: '/reports', label: 'Reportes', icon: ShieldCheck, perm: 'reports.view' },
+      { to: '/stats', label: 'Estadísticas', icon: BarChart3, perm: 'stats.view' },
     ],
   },
   {

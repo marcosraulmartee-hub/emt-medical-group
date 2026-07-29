@@ -11,6 +11,7 @@ export const ALL_PERMISSIONS: string[] = [
   'settings.view',
   'audit.view',
   'reminders.view',
+  'stats.view',
 ]
 
 export const ROLE_MATRIX: Record<string, string[]> = {
@@ -23,6 +24,7 @@ export const ROLE_MATRIX: Record<string, string[]> = {
     'consents.view',
     'sessions.view',
     'research.view',
+    'stats.view',
   ],
   tecnico: [
     'dashboard.view',
@@ -56,6 +58,7 @@ export const MODULE_ROUTES: { path: string; perm: string }[] = [
   { path: '/research', perm: 'research.view' },
   { path: '/billing', perm: 'billing.view' },
   { path: '/reports', perm: 'reports.view' },
+  { path: '/stats', perm: 'stats.view' },
   { path: '/settings', perm: 'settings.view' },
   { path: '/audit', perm: 'audit.view' },
 ]

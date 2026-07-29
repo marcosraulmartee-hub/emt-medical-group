@@ -1781,3 +1781,40 @@ drop policy if exists protocols_write on public.protocols;
 create policy protocols_write on public.protocols for all
   using (public.current_app_role() in ('admin', 'medico', 'tecnico'))
   with check (public.current_app_role() in ('admin', 'medico', 'tecnico'));
+
+-- =====================================================================
+-- MIGRACIÓN 024 — Módulo de Estadísticas (solo admin y médico): citas
+-- canceladas en Dashboard/Agenda, y página de Estadísticas (asistencias,
+-- cancelaciones, ingresos, protocolos más usados). Requiere:
+-- 1) el nuevo permiso de página "stats.view" en el catálogo dinámico
+--    (solo admin y médico, nadie más — a diferencia de "reports.view"
+--    que sí incluye a contable);
+-- 2) que médico pueda LEER facturas/pagos (antes no tenía ningún acceso
+--    a esas tablas) para poder calcular ingresos y "cuentas por cobrar"
+--    de un paciente que canceló. Solo lectura — médico sigue sin poder
+--    crear/editar/anular facturas ni registrar pagos.
+-- Ejecutar este bloque completo en el SQL Editor de Supabase.
+-- =====================================================================
+
+insert into public.permissions (key, label) values
+  ('stats.view', 'Ver Estadísticas (solo admin y médico)')
+on conflict (key) do nothing;
+
+insert into public.role_permissions (role_code, permission_key)
+select role_code::public.app_role, permission_key from (values
+  ('admin', 'stats.view'),
+  ('medico', 'stats.view')
+) as seed(role_code, permission_key)
+on conflict (role_code, permission_key) do nothing;
+
+drop policy if exists invoices_select_medico on public.invoices;
+create policy invoices_select_medico on public.invoices for select
+  using (public.current_app_role() = 'medico');
+
+drop policy if exists invoice_items_select_medico on public.invoice_items;
+create policy invoice_items_select_medico on public.invoice_items for select
+  using (public.current_app_role() = 'medico');
+
+drop policy if exists payments_select_medico on public.payments;
+create policy payments_select_medico on public.payments for select
+  using (public.current_app_role() = 'medico');
