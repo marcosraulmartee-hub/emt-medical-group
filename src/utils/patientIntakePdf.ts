@@ -1,4 +1,5 @@
 import jsPDF from 'jspdf'
+import { drawBrandHeader } from './brandAssets'
 
 const NAVY: [number, number, number] = [4, 56, 96]
 const LEFT_X = 14
@@ -23,29 +24,20 @@ function field(doc: jsPDF, x: number, y: number, label: string) {
 export function downloadPatientIntakePdf() {
   const doc = new jsPDF()
 
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(20)
-  doc.setTextColor(...NAVY)
-  doc.text('EMT MÉDICA GROUP', 105, 20, { align: 'center' })
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(9)
-  doc.setTextColor(60, 60, 60)
-  doc.text('Calle 10 esquina José A. Patiño, No. 2A, Villa Olga,', 105, 27, { align: 'center' })
-  doc.text('Santiago de los Caballeros, República Dominicana.', 105, 32, { align: 'center' })
-  doc.text('Tel: (809) 330-1538   |   WhatsApp: (809) 570-8705', 105, 37, { align: 'center' })
-  doc.text('www.emtmedicalgroup.do   |   emtmedicalgroup@gmail.com', 105, 42, { align: 'center' })
+  let y = drawBrandHeader(doc)
+  y += 6
 
-  doc.setTextColor(0, 0, 0)
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(15)
-  doc.text('FICHA DE REGISTRO DE PACIENTE', 105, 53, { align: 'center' })
+  doc.setTextColor(...NAVY)
+  doc.text('FICHA DE REGISTRO DE PACIENTE', 105, y, { align: 'center' })
+  y += 6
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(9)
   doc.setTextColor(90, 90, 90)
-  doc.text('Complete a mano para que recepción registre sus datos en el sistema.', 105, 59, { align: 'center' })
+  doc.text('Complete a mano para que recepción registre sus datos en el sistema.', 105, y, { align: 'center' })
   doc.setTextColor(0, 0, 0)
-
-  let y = 72
+  y += 13
   y = sectionTitle(doc, y, 'DATOS PERSONALES')
   field(doc, LEFT_X, y, 'Nombre completo')
   y += 9

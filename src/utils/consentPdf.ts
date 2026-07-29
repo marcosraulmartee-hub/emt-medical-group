@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import { drawBrandHeader } from './brandAssets'
 
 const NAVY: [number, number, number] = [4, 56, 96]
 const LEFT_X = 14
@@ -45,21 +46,6 @@ const QUESTIONS: Question[] = [
   { text: '¿Ha participado en algún estudio de EMT en las últimas 24 horas?' },
 ]
 
-function drawHeader(doc: jsPDF) {
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(20)
-  doc.setTextColor(...NAVY)
-  doc.text('EMT MÉDICA GROUP', 105, 20, { align: 'center' })
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(9)
-  doc.setTextColor(60, 60, 60)
-  doc.text('Calle 10 esquina José A. Patiño, No. 2A, Villa Olga,', 105, 27, { align: 'center' })
-  doc.text('Santiago de los Caballeros, República Dominicana.', 105, 32, { align: 'center' })
-  doc.text('Tel: (809) 330-1538   |   WhatsApp: (809) 570-8705', 105, 37, { align: 'center' })
-  doc.text('www.emtmedicalgroup.do   |   emtmedicalgroup@gmail.com', 105, 42, { align: 'center' })
-  doc.setTextColor(0, 0, 0)
-}
-
 function checkbox(doc: jsPDF, x: number, y: number, label: string) {
   doc.rect(x, y - 2.8, 2.8, 2.8)
   doc.text(label, x + 4.5, y)
@@ -68,14 +54,18 @@ function checkbox(doc: jsPDF, x: number, y: number, label: string) {
 export function downloadConsentPdf() {
   const doc = new jsPDF()
 
-  drawHeader(doc)
+  let y = drawBrandHeader(doc)
+  y += 6
 
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(13)
-  doc.text('CUESTIONARIO DE CRIBADO DE SEGURIDAD', 105, 53, { align: 'center' })
-  doc.text('PARA ESTIMULACIÓN MAGNÉTICA TRANSCRANEAL (EMT)', 105, 59, { align: 'center' })
+  doc.setTextColor(...NAVY)
+  doc.text('CUESTIONARIO DE CRIBADO DE SEGURIDAD', 105, y, { align: 'center' })
+  y += 6
+  doc.text('PARA ESTIMULACIÓN MAGNÉTICA TRANSCRANEAL (EMT)', 105, y, { align: 'center' })
+  doc.setTextColor(0, 0, 0)
+  y += 11
 
-  let y = 70
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(9.5)
   doc.text('Participante Nombre/ID: ________________________________________________', LEFT_X, y)
