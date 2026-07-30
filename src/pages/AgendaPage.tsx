@@ -11,6 +11,7 @@ import { AppointmentFormModal } from './agenda/AppointmentFormModal'
 import { AppointmentDetailModal } from './agenda/AppointmentDetailModal'
 import { RescheduleModal } from './agenda/RescheduleModal'
 import { CancellationsModal } from './agenda/CancellationsModal'
+import { AgendaSummaryModal } from './agenda/AgendaSummaryModal'
 import { useAuth } from '../hooks/useAuth'
 
 type ViewMode = 'day' | 'week'
@@ -26,6 +27,7 @@ export function AgendaPage() {
   const [rescheduling, setRescheduling] = useState<Appointment | null>(null)
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
   const [cancellationsOpen, setCancellationsOpen] = useState(false)
+  const [summaryOpen, setSummaryOpen] = useState(false)
 
   const weekStart = startOfWeek(selectedDate)
   const rangeStart = view === 'day' ? selectedDate : weekStart
@@ -77,9 +79,14 @@ export function AgendaPage() {
           </div>
           <div className="flex gap-2">
             {can('stats.view') && (
-              <Button variant="secondary" onClick={() => setCancellationsOpen(true)}>
-                Ver cancelaciones
-              </Button>
+              <>
+                <Button variant="secondary" onClick={() => setSummaryOpen(true)}>
+                  Resumen clínico
+                </Button>
+                <Button variant="secondary" onClick={() => setCancellationsOpen(true)}>
+                  Ver cancelaciones
+                </Button>
+              </>
             )}
             <Button onClick={() => setCreateOpen(true)}>Nueva cita</Button>
           </div>
@@ -183,6 +190,7 @@ export function AgendaPage() {
       )}
 
       <CancellationsModal open={cancellationsOpen} onClose={() => setCancellationsOpen(false)} />
+      <AgendaSummaryModal open={summaryOpen} onClose={() => setSummaryOpen(false)} />
     </AppShell>
   )
 }

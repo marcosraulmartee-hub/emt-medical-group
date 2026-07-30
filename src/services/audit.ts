@@ -22,7 +22,7 @@ export async function logAudit(action: string, entity: string, entityId: string 
   })
 }
 
-export async function listAuditLogs(filters: { from?: string; to?: string; entity?: string }) {
+export async function listAuditLogs(filters: { from?: string; to?: string; entity?: string; userId?: string }) {
   let query = supabase
     .from('audit_logs')
     .select('id, user_id, action, entity, entity_id, details, created_at')
@@ -31,6 +31,7 @@ export async function listAuditLogs(filters: { from?: string; to?: string; entit
   if (filters.from) query = query.gte('created_at', filters.from)
   if (filters.to) query = query.lte('created_at', filters.to)
   if (filters.entity) query = query.eq('entity', filters.entity)
+  if (filters.userId) query = query.eq('user_id', filters.userId)
 
   const { data, error } = await query
   if (error) throw error
