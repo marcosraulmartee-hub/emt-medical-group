@@ -1,15 +1,11 @@
 import { useEffect, useState } from 'react'
-import { MessageCircle } from 'lucide-react'
 import { Modal } from '../../components/ui/Modal'
-import { Button } from '../../components/ui/Button'
 import { Table } from '../../components/ui/Table'
 import { Badge } from '../../components/ui/Badge'
 import { Alert } from '../../components/ui/Alert'
 import type { Appointment } from '../../services/appointments'
 import type { AgendaSummaryRow } from '../../services/agendaSummary'
 import { buildAgendaSummary, listAppointmentsForSummary } from '../../services/agendaSummary'
-import { buildDailyAgendaMessage } from '../../utils/messages'
-import { buildWhatsAppShareUrl, openShareWindow } from '../../utils/share'
 import { addDays, startOfWeek, toISODate } from '../../utils/dates'
 
 type Range = 'hoy' | 'semana'
@@ -41,7 +37,6 @@ export function AgendaSummaryModal({ open, onClose }: { open: boolean; onClose: 
   const [rows, setRows] = useState<AgendaSummaryRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [sendingWhatsApp, setSendingWhatsApp] = useState(false)
 
   async function load() {
     setLoading(true)
@@ -65,50 +60,28 @@ export function AgendaSummaryModal({ open, onClose }: { open: boolean; onClose: 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, range])
 
-  async function handleSendTomorrow() {
-    setSendingWhatsApp(true)
-    setError('')
-    try {
-      const tomorrow = addDays(new Date(), 1)
-      const iso = toISODate(tomorrow)
-      const appointments = await listAppointmentsForSummary(iso, iso)
-      const message = buildDailyAgendaMessage(tomorrow, appointments)
-      openShareWindow(buildWhatsAppShareUrl(null, message))
-    } catch {
-      setError('No se pudo preparar la agenda de mañana.')
-    } finally {
-      setSendingWhatsApp(false)
-    }
-  }
-
   return (
     <Modal open={open} title="Resumen clínico de agenda" size="lg" onClose={onClose}>
       <div className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex gap-2 rounded-2xl bg-slate-100 p-1.5">
-            <button
-              onClick={() => setRange('hoy')}
-              className={
-                'rounded-xl px-4 py-2 text-sm font-medium transition ' +
-                (range === 'hoy' ? 'bg-white text-midnight-950 shadow-card' : 'text-slate-600 hover:bg-white/60')
-              }
-            >
-              Hoy
-            </button>
-            <button
-              onClick={() => setRange('semana')}
-              className={
-                'rounded-xl px-4 py-2 text-sm font-medium transition ' +
-                (range === 'semana' ? 'bg-white text-midnight-950 shadow-card' : 'text-slate-600 hover:bg-white/60')
-              }
-            >
-              Esta semana
-            </button>
-          </div>
-          <Button variant="secondary" onClick={handleSendTomorrow} loading={sendingWhatsApp}>
-            <MessageCircle size={16} className="mr-1.5" />
-            Enviar agenda de mañana
-          </Button>
+        <div className="flex gap-2 rounded-2xl bg-slate-100 p-1.5">
+          <button
+            onClick={() => setRange('hoy')}
+            className={
+              'rounded-xl px-4 py-2 text-sm font-medium transition ' +
+              (range === 'hoy' ? 'bg-white text-midnight-950 shadow-card' : 'text-slate-600 hover:bg-white/60')
+            }
+          >
+            Hoy
+          </button>
+          <button
+            onClick={() => setRange('semana')}
+            className={
+              'rounded-xl px-4 py-2 text-sm font-medium transition ' +
+              (range === 'semana' ? 'bg-white text-midnight-950 shadow-card' : 'text-slate-600 hover:bg-white/60')
+            }
+          >
+            Esta semana
+          </button>
         </div>
 
         {error && <Alert variant="error">{error}</Alert>}

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { MessageCircle } from 'lucide-react'
 import { AppShell } from '../components/layout/AppShell'
 import { Button } from '../components/ui/Button'
 import { Alert } from '../components/ui/Alert'
@@ -13,6 +14,8 @@ import { RescheduleModal } from './agenda/RescheduleModal'
 import { CancellationsModal } from './agenda/CancellationsModal'
 import { AgendaSummaryModal } from './agenda/AgendaSummaryModal'
 import { useAuth } from '../hooks/useAuth'
+import { buildDailyAgendaMessage } from '../utils/messages'
+import { buildWhatsAppShareUrl, openShareWindow } from '../utils/share'
 
 type ViewMode = 'day' | 'week'
 
@@ -28,6 +31,7 @@ export function AgendaPage() {
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
   const [cancellationsOpen, setCancellationsOpen] = useState(false)
   const [summaryOpen, setSummaryOpen] = useState(false)
+  const [sendingTomorrow, setSendingTomorrow] = useState(false)
 
   const weekStart = startOfWeek(selectedDate)
   const rangeStart = view === 'day' ? selectedDate : weekStart
@@ -69,6 +73,21 @@ export function AgendaPage() {
     }
   }
 
+  async function handleSendTomorrow() {
+    setSendingTomorrow(true)
+    setError('')
+    try {
+      const tomorrow = addDays(new Date(), 1)
+      const iso = toISODate(tomorrow)
+      const data = await listAppointmentsInRange(iso, iso)
+      openShareWindow(buildWhatsAppShareUrl(null, buildDailyAgendaMessage(tomorrow, data)))
+    } catch {
+      setError('No se pudo preparar la agenda de mañana.')
+    } finally {
+      setSendingTomorrow(false)
+    }
+  }
+
   return (
     <AppShell title="Agenda">
       <div className="space-y-6">
@@ -77,7 +96,11 @@ export function AgendaPage() {
             <h2 className="text-lg font-semibold text-midnight-950">Calendario de sesiones</h2>
             <p className="text-sm text-slate-500 capitalize">{formatFullDate(selectedDate)}</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <Button variant="secondary" onClick={handleSendTomorrow} loading={sendingTomorrow}>
+              <MessageCircle size={16} className="mr-1.5" />
+              Enviar agenda de mañana
+            </Button>
             {can('stats.view') && (
               <>
                 <Button variant="secondary" onClick={() => setSummaryOpen(true)}>
