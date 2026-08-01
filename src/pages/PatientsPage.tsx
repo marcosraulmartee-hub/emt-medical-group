@@ -13,6 +13,7 @@ import type { FollowUpPatient } from '../services/followUp'
 import { listPatientsNeedingFollowUp } from '../services/followUp'
 import { buildMailtoUrl, buildWhatsAppShareUrl, openShareWindow } from '../utils/share'
 import { buildFollowUpReminderMessage } from '../utils/messages'
+import { getSetting } from '../services/clinicSettings'
 
 export function PatientsPage() {
   const navigate = useNavigate()
@@ -103,6 +104,25 @@ export function PatientsPage() {
     }
   }
 
+  async function handleShareIntakeForm(channel: 'whatsapp' | 'email') {
+    setPdfError('')
+    try {
+      const url = await getSetting('patient_intake_form_url')
+      if (!url) {
+        setPdfError('Todavía no configuraste el link del formulario. Ve a Configuración → Registro en línea.')
+        return
+      }
+      const message = `Hola, te escribimos de EMT Medical Group. Por favor completa tu ficha de registro, consentimiento y cuestionario de cribado en este formulario antes de tu evaluación:\n\n${url}`
+      if (channel === 'whatsapp') {
+        openShareWindow(buildWhatsAppShareUrl(null, message))
+      } else {
+        openShareWindow(buildMailtoUrl(null, 'EMT Medical Group — Formulario de registro', message))
+      }
+    } catch {
+      setPdfError('No se pudo obtener el link del formulario.')
+    }
+  }
+
   async function handleDownloadIntakeForm() {
     setPdfError('')
     setDownloadingPdf(true)
@@ -132,6 +152,12 @@ export function PatientsPage() {
             </Button>
             <Button variant="secondary" onClick={handleDownloadIntakeForm} loading={downloadingPdf}>
               Descargar ficha en blanco (PDF)
+            </Button>
+            <Button variant="secondary" onClick={() => handleShareIntakeForm('whatsapp')}>
+              Enviar formulario (WhatsApp)
+            </Button>
+            <Button variant="secondary" onClick={() => handleShareIntakeForm('email')}>
+              Enviar formulario (correo)
             </Button>
             <Button onClick={() => setModalOpen(true)}>Nueva ficha</Button>
           </div>

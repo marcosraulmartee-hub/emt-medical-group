@@ -8,6 +8,7 @@ import { ChecklistSection } from './settings/ChecklistSection'
 import { ClinicalScalesSection } from './settings/ClinicalScalesSection'
 import { BillingSettingsSection } from './settings/BillingSettingsSection'
 import { PermissionsSection } from './settings/PermissionsSection'
+import { IntakeFormSection } from './settings/IntakeFormSection'
 
 const TABS = [
   { key: 'equipment', label: 'Equipos' },
@@ -16,6 +17,7 @@ const TABS = [
   { key: 'checklist', label: 'Checklist de seguridad' },
   { key: 'scales', label: 'Escalas clínicas' },
   { key: 'billing', label: 'Facturación' },
+  { key: 'intake', label: 'Registro en línea' },
   { key: 'users', label: 'Usuarios' },
   { key: 'permissions', label: 'Permisos' },
 ] as const
@@ -50,6 +52,7 @@ export function SettingsPage() {
           {tab === 'checklist' && <ChecklistSection />}
           {tab === 'scales' && <ClinicalScalesSection />}
           {tab === 'billing' && <BillingSettingsSection />}
+          {tab === 'intake' && <IntakeFormSection />}
           {tab === 'users' && <UsersSection />}
           {tab === 'permissions' && <PermissionsSection />}
         </div>

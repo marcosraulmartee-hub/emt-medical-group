@@ -1818,3 +1818,144 @@ create policy invoice_items_select_medico on public.invoice_items for select
 drop policy if exists payments_select_medico on public.payments;
 create policy payments_select_medico on public.payments for select
   using (public.current_app_role() = 'medico');
+
+-- =====================================================================
+-- MIGRACIÓN 025 — Auto-registro de pacientes vía Google Forms. Un
+-- paciente llena un único formulario público (ficha + consentimiento +
+-- cuestionario de cribado EMT) y, sin que nadie del staff lo apruebe,
+-- Google Apps Script llama a la función self_register_patient_intake()
+-- con la clave publicable (nunca la service_role). La función corre con
+-- "security definer" (igual que issue_invoice/void_invoice) por lo que
+-- puede escribir en patients aunque quien llama sea anónimo — es la
+-- ÚNICA puerta pública: nadie anónimo obtiene acceso directo a las
+-- tablas. Si el email o la cédula ya existen, actualiza esa ficha en
+-- vez de duplicarla (solo completa campos vacíos, nunca pisa datos
+-- existentes). Guarda también el envío crudo (auditoría) y las
+-- respuestas del cuestionario de seguridad.
+-- Ejecutar este bloque completo en el SQL Editor de Supabase.
+-- =====================================================================
+
+create table if not exists public.patient_intake_submissions (
+  id uuid primary key default gen_random_uuid(),
+  patient_id uuid references public.patients(id) on delete set null,
+  source text not null default 'google_form',
+  raw_payload jsonb not null,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.patient_safety_screenings (
+  id uuid primary key default gen_random_uuid(),
+  patient_id uuid not null references public.patients(id) on delete cascade,
+  consent_accepted boolean not null default false,
+  consent_signed_name text,
+  answers jsonb not null default '[]'::jsonb,
+  submitted_at timestamptz not null default now(),
+  created_at timestamptz not null default now()
+);
+
+alter table public.patient_intake_submissions enable row level security;
+alter table public.patient_safety_screenings enable row level security;
+
+drop policy if exists patient_intake_submissions_select on public.patient_intake_submissions;
+create policy patient_intake_submissions_select on public.patient_intake_submissions for select
+  using (public.current_app_role() = 'admin');
+
+drop policy if exists patient_safety_screenings_select on public.patient_safety_screenings;
+create policy patient_safety_screenings_select on public.patient_safety_screenings for select
+  using (public.current_app_role() in ('admin', 'medico'));
+
+-- Sin políticas de insert/update/delete para ningún rol autenticado en
+-- estas dos tablas: el único escritor es la función de abajo.
+
+create or replace function public.self_register_patient_intake(payload jsonb)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_patient_id uuid;
+  v_full_name text;
+  v_email text;
+  v_phone text;
+  v_national_id text;
+  v_birth_date date;
+begin
+  v_full_name := trim(payload->>'full_name');
+  if v_full_name is null or length(v_full_name) < 2 then
+    raise exception 'Nombre completo requerido';
+  end if;
+  v_email := nullif(trim(payload->>'email'), '');
+  v_phone := nullif(trim(payload->>'phone'), '');
+  v_national_id := nullif(trim(payload->>'national_id'), '');
+  begin
+    v_birth_date := nullif(payload->>'birth_date', '')::date;
+  exception when others then
+    v_birth_date := null;
+  end;
+
+  if v_email is not null then
+    select id into v_patient_id from public.patients where email = v_email limit 1;
+  end if;
+  if v_patient_id is null and v_national_id is not null then
+    select id into v_patient_id from public.patients where national_id = v_national_id limit 1;
+  end if;
+
+  if v_patient_id is null then
+    insert into public.patients (
+      full_name, email, phone, birth_date, gender, national_id, address, city,
+      occupation, education_level, marital_status, emergency_contact_name,
+      emergency_contact_phone, referred_by, insurance_provider
+    ) values (
+      v_full_name, v_email, v_phone, v_birth_date,
+      nullif(payload->>'gender', ''),
+      v_national_id,
+      nullif(payload->>'address', ''),
+      nullif(payload->>'city', ''),
+      nullif(payload->>'occupation', ''),
+      nullif(payload->>'education_level', ''),
+      nullif(payload->>'marital_status', ''),
+      nullif(payload->>'emergency_contact_name', ''),
+      nullif(payload->>'emergency_contact_phone', ''),
+      nullif(payload->>'referred_by', ''),
+      nullif(payload->>'insurance_provider', '')
+    )
+    returning id into v_patient_id;
+  else
+    update public.patients set
+      phone = coalesce(phone, v_phone),
+      birth_date = coalesce(birth_date, v_birth_date),
+      gender = coalesce(gender, nullif(payload->>'gender', '')),
+      national_id = coalesce(national_id, v_national_id),
+      address = coalesce(address, nullif(payload->>'address', '')),
+      city = coalesce(city, nullif(payload->>'city', '')),
+      occupation = coalesce(occupation, nullif(payload->>'occupation', '')),
+      education_level = coalesce(education_level, nullif(payload->>'education_level', '')),
+      marital_status = coalesce(marital_status, nullif(payload->>'marital_status', '')),
+      emergency_contact_name = coalesce(emergency_contact_name, nullif(payload->>'emergency_contact_name', '')),
+      emergency_contact_phone = coalesce(emergency_contact_phone, nullif(payload->>'emergency_contact_phone', '')),
+      referred_by = coalesce(referred_by, nullif(payload->>'referred_by', '')),
+      insurance_provider = coalesce(insurance_provider, nullif(payload->>'insurance_provider', ''))
+    where id = v_patient_id;
+  end if;
+
+  insert into public.patient_intake_submissions (patient_id, source, raw_payload)
+  values (v_patient_id, 'google_form', payload);
+
+  insert into public.patient_safety_screenings (patient_id, consent_accepted, consent_signed_name, answers)
+  values (
+    v_patient_id,
+    coalesce((payload->>'consent_accepted')::boolean, false),
+    nullif(payload->>'consent_signed_name', ''),
+    coalesce(payload->'screening_answers', '[]'::jsonb)
+  );
+
+  insert into public.audit_logs (user_id, action, entity, entity_id, details)
+  values (null, 'self_register', 'patient', v_patient_id, jsonb_build_object('source', 'google_form'));
+
+  return v_patient_id;
+end;
+$$;
+
+grant execute on function public.self_register_patient_intake(jsonb) to anon;
+grant execute on function public.self_register_patient_intake(jsonb) to authenticated;
