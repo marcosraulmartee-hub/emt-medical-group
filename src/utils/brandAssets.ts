@@ -30,7 +30,7 @@ export function drawBrandHeader(doc: import('jspdf').default, opts?: { withConta
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(9)
     doc.setTextColor(60, 60, 60)
-    doc.text('Calle 10 esquina José A. Patiño, No. 2A, Villa Olga,', pageWidth / 2, y, { align: 'center' })
+    doc.text('Calle 10 esquina José A. Patiño No. 2A, Urbanización Villa Olga,', pageWidth / 2, y, { align: 'center' })
     y += 5
     doc.text('Santiago de los Caballeros, República Dominicana.', pageWidth / 2, y, { align: 'center' })
     y += 5

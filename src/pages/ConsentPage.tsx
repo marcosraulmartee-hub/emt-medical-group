@@ -36,7 +36,7 @@ export function ConsentPage() {
 
   function shareMessage() {
     const name = patient?.full_name ?? 'estimado/a paciente'
-    return `Hola ${name}, te compartimos de EMT Medical Group el Cuestionario de cribado de seguridad para tu tratamiento de EMT. Descárgalo aquí y tráelo lleno (o lo llenamos en la clínica) el día de tu evaluación.`
+    return `Hola ${name}, te compartimos de EMT Medical Group el Consentimiento Informado para tu tratamiento de EMT. Descárgalo aquí y tráelo firmado (o lo firmamos en la clínica) el día de tu evaluación.`
   }
 
   async function handleShare(channel: 'whatsapp' | 'email') {
@@ -49,7 +49,7 @@ export function ConsentPage() {
       if (channel === 'whatsapp') {
         openShareWindow(buildWhatsAppShareUrl(patient?.phone, message))
       } else {
-        openShareWindow(buildMailtoUrl(patient?.email, 'EMT Medical Group — Cuestionario de cribado de seguridad', message))
+        openShareWindow(buildMailtoUrl(patient?.email, 'EMT Medical Group — Consentimiento informado', message))
       }
       setShared(true)
     } catch (err) {
@@ -63,8 +63,8 @@ export function ConsentPage() {
       <div className="flex flex-col gap-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-midnight-950">Cuestionario de cribado de seguridad</h2>
-            <p className="text-sm text-slate-500">Evaluación de seguridad previa al tratamiento con EMT.</p>
+            <h2 className="text-lg font-semibold text-midnight-950">Consentimientos informados</h2>
+            <p className="text-sm text-slate-500">Gestión y firmas de consentimientos clínicos.</p>
           </div>
           <Button onClick={handleDownload} loading={downloading}>
             Descargar formulario (PDF)
@@ -80,9 +80,9 @@ export function ConsentPage() {
 
         <div className="rounded-3xl bg-white p-6 shadow-card">
           <p className="text-sm text-slate-500">
-            Cuestionario de cribado de seguridad para EMT en blanco (20 preguntas Sí/No), listo para imprimir y llenar con
-            el paciente antes de iniciar el tratamiento. El repositorio de cuestionarios llenados por paciente (historial,
-            estado, adjuntos) todavía está pendiente de construir.
+            El formulario de Consentimiento Informado para EMT en blanco, listo para imprimir y firmar con el paciente.
+            El repositorio de consentimientos firmados por paciente (historial, estado, adjuntos) todavía está pendiente
+            de construir.
           </p>
 
           <div className="mt-5 flex flex-wrap items-end gap-3 border-t border-slate-100 pt-5">
