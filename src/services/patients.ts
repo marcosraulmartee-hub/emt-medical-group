@@ -4,10 +4,10 @@ import { logAudit } from './audit'
 export interface Patient {
   id: string
   full_name: string
-  email: string
-  phone: string
-  birth_date: string
-  gender: string
+  email: string | null
+  phone: string | null
+  birth_date: string | null
+  gender: string | null
   medical_record: string | null
   national_id: string | null
   address: string | null

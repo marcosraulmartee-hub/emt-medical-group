@@ -1959,3 +1959,21 @@ $$;
 
 grant execute on function public.self_register_patient_intake(jsonb) to anon;
 grant execute on function public.self_register_patient_intake(jsonb) to authenticated;
+
+-- =====================================================================
+-- MIGRACIÓN 026 — Técnico puede crear y editar fichas de paciente (por
+-- ejemplo, un paciente que llega sin cita previa mientras agenda una
+-- sesión). La Migración 022 le había dejado solo lectura; ahora se
+-- agrega inserción y edición — sigue sin poder borrar pacientes, eso
+-- se mantiene reservado a admin/médico/recepcionista.
+-- Ejecutar este bloque completo en el SQL Editor de Supabase.
+-- =====================================================================
+
+drop policy if exists patients_insert_tecnico on public.patients;
+create policy patients_insert_tecnico on public.patients for insert
+  with check (public.current_app_role() = 'tecnico');
+
+drop policy if exists patients_update_tecnico on public.patients;
+create policy patients_update_tecnico on public.patients for update
+  using (public.current_app_role() = 'tecnico')
+  with check (public.current_app_role() = 'tecnico');

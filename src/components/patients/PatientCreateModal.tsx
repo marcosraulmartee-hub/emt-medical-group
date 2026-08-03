@@ -51,10 +51,10 @@ export function PatientCreateModal({ open, onClose, onCreated }: PatientCreateMo
     try {
       const patient = await createPatient({
         full_name: form.full_name,
-        email: form.email,
-        phone: form.phone,
-        birth_date: form.birth_date,
-        gender: form.gender,
+        email: form.email || null,
+        phone: form.phone || null,
+        birth_date: form.birth_date || null,
+        gender: form.gender || null,
         medical_record: form.medical_record || null,
         national_id: form.national_id || null,
         address: form.address || null,

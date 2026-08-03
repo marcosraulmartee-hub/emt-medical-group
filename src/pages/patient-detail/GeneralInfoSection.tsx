@@ -15,10 +15,10 @@ export function GeneralInfoSection({ patient, onUpdated }: { patient: Patient; o
   const [form, setForm] = useState({
     full_name: patient.full_name,
     national_id: field(patient, 'national_id'),
-    birth_date: patient.birth_date,
-    gender: patient.gender,
-    email: patient.email,
-    phone: patient.phone,
+    birth_date: field(patient, 'birth_date'),
+    gender: field(patient, 'gender'),
+    email: field(patient, 'email'),
+    phone: field(patient, 'phone'),
     address: field(patient, 'address'),
     city: field(patient, 'city'),
     occupation: field(patient, 'occupation'),
@@ -44,10 +44,10 @@ export function GeneralInfoSection({ patient, onUpdated }: { patient: Patient; o
       const updated = await updatePatient(patient.id, {
         full_name: form.full_name,
         national_id: form.national_id || null,
-        birth_date: form.birth_date,
-        gender: form.gender,
-        email: form.email,
-        phone: form.phone,
+        birth_date: form.birth_date || null,
+        gender: form.gender || null,
+        email: form.email || null,
+        phone: form.phone || null,
         address: form.address || null,
         city: form.city || null,
         occupation: form.occupation || null,
@@ -80,10 +80,10 @@ export function GeneralInfoSection({ patient, onUpdated }: { patient: Patient; o
         <dl className="grid gap-4 sm:grid-cols-2">
           <Field label="Nombre" value={patient.full_name} />
           <Field label="Cédula" value={field(patient, 'national_id')} />
-          <Field label="Fecha de nacimiento" value={patient.birth_date} />
-          <Field label="Género" value={patient.gender} />
-          <Field label="Email" value={patient.email} />
-          <Field label="Teléfono" value={patient.phone} />
+          <Field label="Fecha de nacimiento" value={field(patient, 'birth_date')} />
+          <Field label="Género" value={field(patient, 'gender')} />
+          <Field label="Email" value={field(patient, 'email')} />
+          <Field label="Teléfono" value={field(patient, 'phone')} />
           <Field label="Dirección" value={field(patient, 'address')} />
           <Field label="Ciudad" value={field(patient, 'city')} />
           <Field label="Ocupación" value={field(patient, 'occupation')} />
