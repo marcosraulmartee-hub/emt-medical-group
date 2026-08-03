@@ -7,11 +7,14 @@ import { Textarea } from '../../components/ui/Textarea'
 import { Alert } from '../../components/ui/Alert'
 import { ChecklistForm } from './ChecklistForm'
 import { HeadMap1020 } from '../../components/sessions/HeadMap1020'
+import { ProtocolOptionGroups } from '../../components/protocols/ProtocolOptionGroups'
 import { useAuth } from '../../hooks/useAuth'
 import type { Patient } from '../../services/patients'
 import { listPatients } from '../../services/patients'
 import type { Protocol } from '../../services/protocols'
 import { listProtocols } from '../../services/protocols'
+import type { ProtocolCategory } from '../../services/protocolCategories'
+import { listProtocolCategories } from '../../services/protocolCategories'
 import type { Equipment } from '../../services/equipment'
 import { listEquipment } from '../../services/equipment'
 import type { Coil } from '../../services/coils'
@@ -53,6 +56,7 @@ export function SessionFormModal({ open, onClose, onCreated }: { open: boolean; 
   const { user } = useAuth()
   const [patients, setPatients] = useState<Patient[]>([])
   const [protocols, setProtocols] = useState<Protocol[]>([])
+  const [protocolCategories, setProtocolCategories] = useState<ProtocolCategory[]>([])
   const [equipment, setEquipment] = useState<Equipment[]>([])
   const [coils, setCoils] = useState<Coil[]>([])
   const [cycles, setCycles] = useState<TreatmentCycle[]>([])
@@ -69,10 +73,11 @@ export function SessionFormModal({ open, onClose, onCreated }: { open: boolean; 
     setAnswers({})
     setError('')
     setShowHeadMap(false)
-    Promise.all([listPatients(), listProtocols(), listEquipment(), listCoils(), listActiveChecklistItems()])
-      .then(([p, pr, eq, co, items]) => {
+    Promise.all([listPatients(), listProtocols(), listProtocolCategories(), listEquipment(), listCoils(), listActiveChecklistItems()])
+      .then(([p, pr, cats, eq, co, items]) => {
         setPatients(p)
-        setProtocols(pr.filter((x) => x.is_active))
+        setProtocols(pr)
+        setProtocolCategories(cats)
         setEquipment(eq.filter((x) => x.status === 'active'))
         setCoils(co.filter((x) => x.status === 'active'))
         setChecklistItems(items)
@@ -216,11 +221,7 @@ export function SessionFormModal({ open, onClose, onCreated }: { open: boolean; 
               onChange={(e) => setForm({ ...form, newCycleProtocolId: e.target.value })}
             >
               <option value="">Seleccioná un protocolo</option>
-              {protocols.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
+              <ProtocolOptionGroups protocols={protocols} categories={protocolCategories} />
             </Select>
             <Input
               label="Sesiones planificadas"

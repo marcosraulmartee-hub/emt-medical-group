@@ -9,6 +9,9 @@ import type { SessionPackage } from '../../services/sessionPackages'
 import { createSessionPackage, listPatientPackages } from '../../services/sessionPackages'
 import type { Protocol } from '../../services/protocols'
 import { listProtocols } from '../../services/protocols'
+import type { ProtocolCategory } from '../../services/protocolCategories'
+import { listProtocolCategories } from '../../services/protocolCategories'
+import { ProtocolOptionGroups } from '../../components/protocols/ProtocolOptionGroups'
 
 const STATUS_LABEL: Record<SessionPackage['status'], string> = {
   active: 'Activo',
@@ -29,6 +32,7 @@ const emptyForm = { name: '', protocol_id: '', total_sessions: 10, price: 0 }
 export function PackagesSection({ patientId }: { patientId: string }) {
   const [packages, setPackages] = useState<SessionPackage[]>([])
   const [protocols, setProtocols] = useState<Protocol[]>([])
+  const [protocolCategories, setProtocolCategories] = useState<ProtocolCategory[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
@@ -38,9 +42,10 @@ export function PackagesSection({ patientId }: { patientId: string }) {
   async function load() {
     setLoading(true)
     try {
-      const [pkgs, pr] = await Promise.all([listPatientPackages(patientId), listProtocols()])
+      const [pkgs, pr, cats] = await Promise.all([listPatientPackages(patientId), listProtocols(), listProtocolCategories()])
       setPackages(pkgs)
-      setProtocols(pr.filter((p) => p.is_active))
+      setProtocols(pr)
+      setProtocolCategories(cats)
     } catch {
       setError('No se pudieron cargar los paquetes.')
     } finally {
@@ -128,11 +133,7 @@ export function PackagesSection({ patientId }: { patientId: string }) {
           <Input label="Nombre del paquete" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           <Select label="Protocolo (opcional)" value={form.protocol_id} onChange={(e) => setForm({ ...form, protocol_id: e.target.value })}>
             <option value="">Sin definir</option>
-            {protocols.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
+            <ProtocolOptionGroups protocols={protocols} categories={protocolCategories} />
           </Select>
           <div className="grid gap-4 sm:grid-cols-2">
             <Input

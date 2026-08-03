@@ -9,6 +9,9 @@ import type { Patient } from '../../services/patients'
 import { listPatients } from '../../services/patients'
 import type { Protocol } from '../../services/protocols'
 import { listProtocols } from '../../services/protocols'
+import type { ProtocolCategory } from '../../services/protocolCategories'
+import { listProtocolCategories } from '../../services/protocolCategories'
+import { ProtocolOptionGroups } from '../../components/protocols/ProtocolOptionGroups'
 import type { PriceListItem } from '../../services/priceList'
 import { listPriceList } from '../../services/priceList'
 import { createBudget } from '../../services/budgets'
@@ -22,6 +25,7 @@ interface LineItem {
 export function BudgetFormModal({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: () => void }) {
   const [patients, setPatients] = useState<Patient[]>([])
   const [protocols, setProtocols] = useState<Protocol[]>([])
+  const [protocolCategories, setProtocolCategories] = useState<ProtocolCategory[]>([])
   const [priceList, setPriceList] = useState<PriceListItem[]>([])
   const [patientId, setPatientId] = useState('')
   const [protocolId, setProtocolId] = useState('')
@@ -43,9 +47,10 @@ export function BudgetFormModal({ open, onClose, onCreated }: { open: boolean; o
     setSessionCount(30)
     setItems([])
     setError('')
-    Promise.all([listPatients(), listProtocols(), listPriceList()]).then(([p, pr, pl]) => {
+    Promise.all([listPatients(), listProtocols(), listProtocolCategories(), listPriceList()]).then(([p, pr, cats, pl]) => {
       setPatients(p)
-      setProtocols(pr.filter((x) => x.is_active))
+      setProtocols(pr)
+      setProtocolCategories(cats)
       setPriceList(pl.filter((x) => x.is_active))
     })
   }, [open])
@@ -121,11 +126,7 @@ export function BudgetFormModal({ open, onClose, onCreated }: { open: boolean; o
           </Select>
           <Select label="Protocolo (opcional)" value={protocolId} onChange={(e) => setProtocolId(e.target.value)}>
             <option value="">Sin protocolo específico</option>
-            {protocols.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
+            <ProtocolOptionGroups protocols={protocols} categories={protocolCategories} />
           </Select>
         </div>
 

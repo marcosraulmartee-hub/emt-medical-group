@@ -12,6 +12,9 @@ import type { Profile } from '../../types/auth'
 import { listUsers } from '../../services/users'
 import type { Protocol } from '../../services/protocols'
 import { listProtocols } from '../../services/protocols'
+import type { ProtocolCategory } from '../../services/protocolCategories'
+import { listProtocolCategories } from '../../services/protocolCategories'
+import { ProtocolOptionGroups } from '../../components/protocols/ProtocolOptionGroups'
 import { countAppointmentsOnDate, createAppointment } from '../../services/appointments'
 import { getSetting } from '../../services/clinicSettings'
 import { toISODate } from '../../utils/dates'
@@ -29,6 +32,7 @@ export function AppointmentFormModal({ open, defaultDate, onClose, onCreated }: 
   const [patients, setPatients] = useState<Patient[]>([])
   const [staff, setStaff] = useState<Profile[]>([])
   const [protocols, setProtocols] = useState<Protocol[]>([])
+  const [protocolCategories, setProtocolCategories] = useState<ProtocolCategory[]>([])
   const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -40,11 +44,12 @@ export function AppointmentFormModal({ open, defaultDate, onClose, onCreated }: 
     setForm({ ...emptyForm, date: toISODate(defaultDate) })
     setError('')
     setCapacityWarning('')
-    Promise.all([listPatients(), listUsers(), listProtocols()])
-      .then(([p, u, pr]) => {
+    Promise.all([listPatients(), listUsers(), listProtocols(), listProtocolCategories()])
+      .then(([p, u, pr, cats]) => {
         setPatients(p)
         setStaff(u.filter((x) => x.role === 'admin' || x.role === 'medico' || x.role === 'tecnico'))
-        setProtocols(pr.filter((x) => x.is_active))
+        setProtocols(pr)
+        setProtocolCategories(cats)
       })
       .catch(() => setError('No se pudieron cargar pacientes/protocolos.'))
   }, [open, defaultDate])
@@ -160,11 +165,7 @@ export function AppointmentFormModal({ open, defaultDate, onClose, onCreated }: 
           onChange={(e) => setForm({ ...form, protocol_id: e.target.value })}
         >
           <option value="">Sin definir</option>
-          {protocols.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
+          <ProtocolOptionGroups protocols={protocols} categories={protocolCategories} />
         </Select>
         <Textarea label="Notas" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
       </div>
