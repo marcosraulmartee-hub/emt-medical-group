@@ -8,6 +8,7 @@ import type { Appointment } from '../services/appointments'
 import { confirmReschedule, listAppointmentsInRange, updateAppointmentStatus } from '../services/appointments'
 import { addDays, formatFullDate, startOfWeek, toISODate } from '../utils/dates'
 import { CalendarGrid } from '../components/calendar/CalendarGrid'
+import { AgendaDayList } from '../components/agenda/AgendaDayList'
 import { AppointmentFormModal } from './agenda/AppointmentFormModal'
 import { AppointmentDetailModal } from './agenda/AppointmentDetailModal'
 import { RescheduleModal } from './agenda/RescheduleModal'
@@ -159,19 +160,17 @@ export function AgendaPage() {
           <div className="flex justify-center p-10">
             <Spinner className="h-6 w-6 text-teal-500" />
           </div>
+        ) : view === 'day' ? (
+          <AgendaDayList appointments={appointments} onEventClick={(a) => setSelectedAppointment(a)} />
         ) : (
           <CalendarGrid
-            days={view === 'day' ? [selectedDate] : Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))}
+            days={Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))}
             appointments={appointments}
             onEventClick={(a) => setSelectedAppointment(a)}
-            onDayHeaderClick={
-              view === 'week'
-                ? (date) => {
-                    setSelectedDate(date)
-                    setView('day')
-                  }
-                : undefined
-            }
+            onDayHeaderClick={(date) => {
+              setSelectedDate(date)
+              setView('day')
+            }}
           />
         )}
       </div>

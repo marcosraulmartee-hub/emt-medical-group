@@ -19,10 +19,10 @@ export interface Appointment {
   updated_at: string
   patient: { full_name: string; phone: string | null } | null
   clinician: { full_name: string } | null
-  protocol: { name: string } | null
+  protocol: { name: string; category: string } | null
 }
 
-const APPOINTMENT_SELECT = `id, patient_id, clinician_id, protocol_id, date, start_time, end_time, status, requested_date, requested_start_time, notes, created_at, updated_at, patient:patients(full_name, phone), clinician:profiles(full_name), protocol:protocols(name)`
+const APPOINTMENT_SELECT = `id, patient_id, clinician_id, protocol_id, date, start_time, end_time, status, requested_date, requested_start_time, notes, created_at, updated_at, patient:patients(full_name, phone), clinician:profiles(full_name), protocol:protocols(name, category)`
 
 export async function listAppointmentsInRange(startDate: string, endDate: string) {
   const { data, error } = await supabase
