@@ -43,7 +43,6 @@ const emptyForm = {
   frequency_hz: '',
   intensity_pct: '',
   rmt_pct: '',
-  motor_threshold: '',
   pulses: '',
   trains: '',
   duration_minutes: '',
@@ -160,7 +159,7 @@ export function SessionFormModal({ open, onClose, onCreated }: { open: boolean; 
         frequency_hz: form.frequency_hz ? Number(form.frequency_hz) : null,
         intensity_pct: form.intensity_pct ? Number(form.intensity_pct) : null,
         rmt_pct: form.rmt_pct ? Number(form.rmt_pct) : null,
-        motor_threshold: form.motor_threshold ? Number(form.motor_threshold) : null,
+        motor_threshold: null,
         pulses: form.pulses ? Number(form.pulses) : null,
         trains: form.trains ? Number(form.trains) : null,
         duration_minutes: form.duration_minutes ? Number(form.duration_minutes) : null,
@@ -298,16 +297,41 @@ export function SessionFormModal({ open, onClose, onCreated }: { open: boolean; 
             type="number"
             min={1}
             max={150}
-            helper="1–150% del umbral motor de reposo"
+            helper='Ej. "100% MT" en la pantalla del equipo — % del umbral motor de reposo'
             value={form.intensity_pct}
             onChange={(e) => setForm({ ...form, intensity_pct: e.target.value })}
           />
-          <Input label="Umbral motor (%)" type="number" value={form.rmt_pct} onChange={(e) => setForm({ ...form, rmt_pct: e.target.value })} />
+          <Input
+            label="Umbral motor en reposo — RMT (% MSO)"
+            type="number"
+            helper="Medido en la pestaña UM del equipo, antes de iniciar la estimulación"
+            value={form.rmt_pct}
+            onChange={(e) => setForm({ ...form, rmt_pct: e.target.value })}
+          />
         </div>
         <div className="grid gap-4 sm:grid-cols-3">
-          <Input label="Motor threshold" type="number" value={form.motor_threshold} onChange={(e) => setForm({ ...form, motor_threshold: e.target.value })} />
-          <Input label="Pulsos" type="number" value={form.pulses} onChange={(e) => setForm({ ...form, pulses: e.target.value })} />
-          <Input label="Trenes" type="number" value={form.trains} onChange={(e) => setForm({ ...form, trains: e.target.value })} />
+          <Input
+            label="Pulsos por tren"
+            type="number"
+            helper='Ej. "30" en "30 x 10,0 Hz" en la pantalla del equipo'
+            value={form.pulses}
+            onChange={(e) => setForm({ ...form, pulses: e.target.value })}
+          />
+          <Input
+            label="Número de trenes"
+            type="number"
+            helper='Ej. "x100" en la pantalla del equipo'
+            value={form.trains}
+            onChange={(e) => setForm({ ...form, trains: e.target.value })}
+          />
+          <Input
+            label="Total de pulsos"
+            type="number"
+            disabled
+            helper="Pulsos por tren × número de trenes (automático)"
+            value={form.pulses && form.trains ? String(Number(form.pulses) * Number(form.trains)) : ''}
+            onChange={() => {}}
+          />
         </div>
         <Input label="Duración (minutos)" type="number" value={form.duration_minutes} onChange={(e) => setForm({ ...form, duration_minutes: e.target.value })} />
 
