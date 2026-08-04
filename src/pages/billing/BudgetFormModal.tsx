@@ -47,12 +47,14 @@ export function BudgetFormModal({ open, onClose, onCreated }: { open: boolean; o
     setSessionCount(30)
     setItems([])
     setError('')
-    Promise.all([listPatients(), listProtocols(), listProtocolCategories(), listPriceList()]).then(([p, pr, cats, pl]) => {
-      setPatients(p)
-      setProtocols(pr)
-      setProtocolCategories(cats)
-      setPriceList(pl.filter((x) => x.is_active))
-    })
+    Promise.all([listPatients(), listProtocols(), listProtocolCategories(), listPriceList()])
+      .then(([p, pr, cats, pl]) => {
+        setPatients(p)
+        setProtocols(pr)
+        setProtocolCategories(cats)
+        setPriceList(pl.filter((x) => x.is_active))
+      })
+      .catch(() => setError('No se pudieron cargar los pacientes, protocolos o el tarifario.'))
   }, [open])
 
   function updateItem(index: number, patch: Partial<LineItem>) {

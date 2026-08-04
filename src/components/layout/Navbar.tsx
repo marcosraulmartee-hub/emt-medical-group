@@ -1,3 +1,4 @@
+import { useState, type FormEvent } from 'react'
 import { Menu, Search } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
@@ -11,10 +12,17 @@ interface NavbarProps {
 export function Navbar({ title, onOpenSidebar }: NavbarProps) {
   const { profile, user, signOut } = useAuth()
   const navigate = useNavigate()
+  const [query, setQuery] = useState('')
 
   async function handleSignOut() {
     await signOut()
     navigate('/login', { replace: true })
+  }
+
+  function handleSearchSubmit(e: FormEvent) {
+    e.preventDefault()
+    if (!query.trim()) return
+    navigate(`/patients?q=${encodeURIComponent(query.trim())}`)
   }
 
   return (
@@ -32,16 +40,21 @@ export function Navbar({ title, onOpenSidebar }: NavbarProps) {
         <p className="text-xs text-slate-500 hidden sm:block">{formatLongDate()}</p>
       </div>
 
-      <div className="ml-auto hidden items-center gap-3 md:flex">
-        <button className="flex h-10 items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-500 hover:bg-slate-100">
+      <form onSubmit={handleSearchSubmit} className="ml-auto hidden items-center gap-3 md:flex">
+        <div className="flex h-10 items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-500 focus-within:border-teal-400">
           <Search size={16} />
-          Buscar protocolo, paciente, sesión...
-        </button>
-      </div>
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Buscar paciente..."
+            className="w-48 bg-transparent text-slate-700 outline-none placeholder:text-slate-400"
+          />
+        </div>
+      </form>
 
-      <button className="relative flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-900 text-white">
+      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-900 text-sm font-semibold text-white">
         {initials(profile?.full_name || user?.email || 'U')}
-      </button>
+      </div>
 
       <button
         onClick={handleSignOut}

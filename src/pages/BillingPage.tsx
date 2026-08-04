@@ -32,6 +32,9 @@ export function BillingPage() {
   const [error, setError] = useState('')
   const [createOpen, setCreateOpen] = useState(false)
   const [selected, setSelected] = useState<Invoice | null>(null)
+  const [exportError, setExportError] = useState('')
+  const [exportingPdf, setExportingPdf] = useState(false)
+  const [exportingExcel, setExportingExcel] = useState(false)
 
   async function load() {
     setLoading(true)
@@ -51,26 +54,42 @@ export function BillingPage() {
   const draftCount = useMemo(() => invoices.filter((inv) => inv.status === 'draft').length, [invoices])
 
   async function exportPdf() {
-    const { exportInvoiceListPdf } = await import('../utils/invoicePdf')
-    exportInvoiceListPdf(invoices)
+    setExportingPdf(true)
+    setExportError('')
+    try {
+      const { exportInvoiceListPdf } = await import('../utils/invoicePdf')
+      exportInvoiceListPdf(invoices)
+    } catch {
+      setExportError('No se pudo generar el PDF. Recargá la página e intentá de nuevo.')
+    } finally {
+      setExportingPdf(false)
+    }
   }
 
   async function exportExcel() {
-    const XLSX = await import('xlsx')
-    const rows = invoices.map((inv) => ({
-      'No. Factura': inv.invoice_number ?? '',
-      Paciente: inv.patient?.full_name ?? '',
-      Estado: STATUS_LABEL[inv.status],
-      'Fecha emisión': inv.issue_date ?? '',
-      Subtotal: inv.subtotal,
-      Descuento: inv.discount_amount,
-      ITBIS: inv.tax_amount,
-      Total: inv.total,
-    }))
-    const worksheet = XLSX.utils.json_to_sheet(rows)
-    const workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Facturas')
-    XLSX.writeFile(workbook, `facturas_${new Date().toISOString().slice(0, 10)}.xlsx`)
+    setExportingExcel(true)
+    setExportError('')
+    try {
+      const XLSX = await import('xlsx')
+      const rows = invoices.map((inv) => ({
+        'No. Factura': inv.invoice_number ?? '',
+        Paciente: inv.patient?.full_name ?? '',
+        Estado: STATUS_LABEL[inv.status],
+        'Fecha emisión': inv.issue_date ?? '',
+        Subtotal: inv.subtotal,
+        Descuento: inv.discount_amount,
+        ITBIS: inv.tax_amount,
+        Total: inv.total,
+      }))
+      const worksheet = XLSX.utils.json_to_sheet(rows)
+      const workbook = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Facturas')
+      XLSX.writeFile(workbook, `facturas_${new Date().toISOString().slice(0, 10)}.xlsx`)
+    } catch {
+      setExportError('No se pudo generar el Excel. Recargá la página e intentá de nuevo.')
+    } finally {
+      setExportingExcel(false)
+    }
   }
 
   return (
@@ -83,16 +102,18 @@ export function BillingPage() {
           </div>
           {tab === 'invoices' && (
             <div className="flex gap-2">
-              <Button variant="secondary" onClick={exportExcel} disabled={invoices.length === 0}>
+              <Button variant="secondary" onClick={exportExcel} loading={exportingExcel} disabled={invoices.length === 0}>
                 Exportar Excel
               </Button>
-              <Button variant="secondary" onClick={exportPdf} disabled={invoices.length === 0}>
+              <Button variant="secondary" onClick={exportPdf} loading={exportingPdf} disabled={invoices.length === 0}>
                 Exportar PDF
               </Button>
               <Button onClick={() => setCreateOpen(true)}>Nueva factura</Button>
             </div>
           )}
         </div>
+
+        {exportError && <Alert variant="error">{exportError}</Alert>}
 
         {!loading && draftCount > 0 && (
           <Alert variant="info">

@@ -12,20 +12,24 @@ function FormUrlSettings() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [error, setError] = useState('')
 
   useEffect(() => {
-    getSetting('patient_intake_form_url').then((value) => {
-      setUrl(value ?? '')
-      setLoading(false)
-    })
+    getSetting('patient_intake_form_url')
+      .then((value) => setUrl(value ?? ''))
+      .catch(() => setError('No se pudo cargar el link del formulario.'))
+      .finally(() => setLoading(false))
   }, [])
 
   async function handleSave() {
     setSaving(true)
     setSaved(false)
+    setError('')
     try {
       await setSetting('patient_intake_form_url', url.trim())
       setSaved(true)
+    } catch {
+      setError('No se pudo guardar el link del formulario.')
     } finally {
       setSaving(false)
     }
@@ -42,6 +46,7 @@ function FormUrlSettings() {
           "Enviar formulario de registro" en Pacientes comparte este link por WhatsApp o correo.
         </p>
       </div>
+      {error && <Alert variant="error">{error}</Alert>}
       {saved && <Alert variant="success">Guardado.</Alert>}
       <Input
         label="URL del formulario"

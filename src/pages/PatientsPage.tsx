@@ -22,7 +22,7 @@ export function PatientsPage() {
   const [followUp, setFollowUp] = useState<FollowUpPatient[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState(() => new URLSearchParams(location.search).get('q') ?? '')
   const [modalOpen, setModalOpen] = useState(false)
   const [showDischarged, setShowDischarged] = useState(false)
   const [pdfError, setPdfError] = useState('')

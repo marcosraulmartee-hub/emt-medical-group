@@ -38,11 +38,13 @@ export function InvoiceFormModal({ open, onClose, onCreated }: { open: boolean; 
     setNotes('')
     setItems([{ description: '', quantity: 1, unit_price: 0 }])
     setError('')
-    Promise.all([listPatients(), listPriceList(), getSetting('tax_rate')]).then(([p, pl, tax]) => {
-      setPatients(p)
-      setPriceList(pl.filter((x) => x.is_active))
-      setTaxRate(Number(tax ?? '0'))
-    })
+    Promise.all([listPatients(), listPriceList(), getSetting('tax_rate')])
+      .then(([p, pl, tax]) => {
+        setPatients(p)
+        setPriceList(pl.filter((x) => x.is_active))
+        setTaxRate(Number(tax ?? '0'))
+      })
+      .catch(() => setError('No se pudieron cargar los pacientes o el tarifario.'))
   }, [open])
 
   function updateItem(index: number, patch: Partial<LineItem>) {

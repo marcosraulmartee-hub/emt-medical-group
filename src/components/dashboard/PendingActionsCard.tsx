@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CalendarClock, MessageCircle } from 'lucide-react'
+import { Alert } from '../ui/Alert'
 import type { Appointment } from '../../services/appointments'
 import { listAppointmentsInRange, updateAppointmentStatus } from '../../services/appointments'
 import type { FollowUpPatient } from '../../services/followUp'
@@ -14,9 +15,11 @@ export function PendingActionsCard({ showFollowUp }: { showFollowUp: boolean }) 
   const [followUp, setFollowUp] = useState<FollowUpPatient[]>([])
   const [loading, setLoading] = useState(true)
   const [confirmingId, setConfirmingId] = useState<string | null>(null)
+  const [error, setError] = useState('')
 
   async function load() {
     setLoading(true)
+    setError('')
     try {
       const today = new Date()
       const tasks: Promise<void>[] = [
@@ -26,6 +29,8 @@ export function PendingActionsCard({ showFollowUp }: { showFollowUp: boolean }) 
       ]
       if (showFollowUp) tasks.push(listPatientsNeedingFollowUp().then((list) => setFollowUp(list.slice(0, 5))))
       await Promise.all(tasks)
+    } catch {
+      setError('No se pudieron cargar las acciones pendientes.')
     } finally {
       setLoading(false)
     }
@@ -38,9 +43,12 @@ export function PendingActionsCard({ showFollowUp }: { showFollowUp: boolean }) 
 
   async function handleConfirm(appointment: Appointment) {
     setConfirmingId(appointment.id)
+    setError('')
     try {
       await updateAppointmentStatus(appointment.id, 'confirmed')
       setPendingAppointments((prev) => prev.filter((a) => a.id !== appointment.id))
+    } catch {
+      setError('No se pudo confirmar la cita.')
     } finally {
       setConfirmingId(null)
     }
@@ -54,7 +62,7 @@ export function PendingActionsCard({ showFollowUp }: { showFollowUp: boolean }) 
     openShareWindow(buildWhatsAppShareUrl(patient.phone, buildFollowUpReminderMessage(patient.full_name)))
   }
 
-  if (!loading && pendingAppointments.length === 0 && followUp.length === 0) {
+  if (!loading && !error && pendingAppointments.length === 0 && followUp.length === 0) {
     return null
   }
 
@@ -69,6 +77,8 @@ export function PendingActionsCard({ showFollowUp }: { showFollowUp: boolean }) 
           <p className="text-xs text-slate-400">Citas por confirmar y pacientes en seguimiento.</p>
         </div>
       </div>
+
+      {error && <Alert variant="error">{error}</Alert>}
 
       {loading ? (
         <p className="text-sm text-slate-500">Cargando...</p>

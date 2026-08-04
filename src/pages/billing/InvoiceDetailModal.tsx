@@ -5,6 +5,7 @@ import { Input } from '../../components/ui/Input'
 import { Select } from '../../components/ui/Select'
 import { Badge } from '../../components/ui/Badge'
 import { Alert } from '../../components/ui/Alert'
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import type { Invoice, InvoiceItem, InvoiceStatus } from '../../services/invoices'
 import { deleteDraftInvoice, issueInvoice, listInvoiceItems, voidInvoice } from '../../services/invoices'
 import type { Payment } from '../../services/payments'
@@ -39,6 +40,7 @@ export function InvoiceDetailModal({
   const [voidOpen, setVoidOpen] = useState(false)
   const [voiding, setVoiding] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [paymentAmount, setPaymentAmount] = useState('')
   const [paymentMethod, setPaymentMethod] = useState('efectivo')
   const [paymentRef, setPaymentRef] = useState('')
@@ -101,6 +103,7 @@ export function InvoiceDetailModal({
     setError('')
     try {
       await deleteDraftInvoice(invoice.id)
+      setDeleteConfirmOpen(false)
       onChanged()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo eliminar el borrador.')
@@ -204,7 +207,7 @@ export function InvoiceDetailModal({
             <Button onClick={handleIssue} loading={issuing}>
               Emitir factura
             </Button>
-            <Button variant="danger" onClick={handleDeleteDraft} loading={deleting}>
+            <Button variant="danger" onClick={() => setDeleteConfirmOpen(true)} loading={deleting}>
               Eliminar borrador
             </Button>
           </div>
@@ -267,6 +270,17 @@ export function InvoiceDetailModal({
           deshacer.
         </Alert>
       </Modal>
+
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        title="Eliminar borrador"
+        message="Se elimina por completo esta factura en borrador. No se puede deshacer."
+        confirmLabel="Eliminar"
+        danger
+        loading={deleting}
+        onConfirm={handleDeleteDraft}
+        onCancel={() => setDeleteConfirmOpen(false)}
+      />
     </Modal>
   )
 }

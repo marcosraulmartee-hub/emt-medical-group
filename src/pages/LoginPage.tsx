@@ -1,5 +1,5 @@
 import { type FormEvent, useMemo, useState } from 'react'
-import { useNavigate, useLocation, Link } from 'react-router-dom'
+import { useNavigate, useLocation, Link, type Location } from 'react-router-dom'
 import { AuthLayout } from '../components/AuthLayout'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
@@ -8,7 +8,11 @@ import { useAuth } from '../hooks/useAuth'
 export function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const from = useMemo(() => new URLSearchParams(location.search).get('from') ?? '/dashboard', [location.search])
+  const from = useMemo(() => {
+    const state = location.state as { from?: Location } | null
+    if (state?.from) return `${state.from.pathname}${state.from.search}`
+    return new URLSearchParams(location.search).get('from') ?? '/dashboard'
+  }, [location.state, location.search])
   const pendingConfirmation = useMemo(
     () => new URLSearchParams(location.search).get('pendingConfirmation') === 'true',
     [location.search],

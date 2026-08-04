@@ -14,14 +14,17 @@ function GeneralSettings() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [error, setError] = useState('')
 
   useEffect(() => {
-    getSetting('tax_rate').then((tax) => {
-      const value = tax ?? '0'
-      setTaxRate(value)
-      setExempt(Number(value) === 0)
-      setLoading(false)
-    })
+    getSetting('tax_rate')
+      .then((tax) => {
+        const value = tax ?? '0'
+        setTaxRate(value)
+        setExempt(Number(value) === 0)
+      })
+      .catch(() => setError('No se pudo cargar la configuración de ITBIS.'))
+      .finally(() => setLoading(false))
   }, [])
 
   function handleExemptToggle(checked: boolean) {
@@ -32,9 +35,12 @@ function GeneralSettings() {
   async function handleSave() {
     setSaving(true)
     setSaved(false)
+    setError('')
     try {
       await setSetting('tax_rate', exempt ? '0' : taxRate)
       setSaved(true)
+    } catch {
+      setError('No se pudo guardar la configuración de ITBIS.')
     } finally {
       setSaving(false)
     }
@@ -45,6 +51,7 @@ function GeneralSettings() {
   return (
     <div className="space-y-4 rounded-3xl bg-white p-6 shadow-card">
       <h3 className="text-base font-semibold text-midnight-950">Configuración general</h3>
+      {error && <Alert variant="error">{error}</Alert>}
       {saved && <Alert variant="success">Guardado.</Alert>}
       <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
         <input
