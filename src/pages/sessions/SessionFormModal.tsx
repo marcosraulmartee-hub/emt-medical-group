@@ -65,6 +65,19 @@ export function SessionFormModal({ open, onClose, onCreated }: { open: boolean; 
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [showHeadMap, setShowHeadMap] = useState(false)
+  const [downloadingGuide, setDownloadingGuide] = useState(false)
+
+  async function handleDownloadGuide() {
+    setDownloadingGuide(true)
+    try {
+      const { downloadSessionParametersGuidePdf } = await import('../../utils/sessionParametersGuidePdf')
+      downloadSessionParametersGuidePdf()
+    } catch {
+      setError('No se pudo generar la guía. Recargá la página e intentá de nuevo.')
+    } finally {
+      setDownloadingGuide(false)
+    }
+  }
 
   useEffect(() => {
     if (!open) return
@@ -282,6 +295,13 @@ export function SessionFormModal({ open, onClose, onCreated }: { open: boolean; 
             onSelect={(code, laterality) => setForm({ ...form, stimulated_region: code, laterality: laterality || form.laterality })}
           />
         )}
+
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Parámetros de estimulación</p>
+          <Button type="button" size="sm" variant="ghost" onClick={handleDownloadGuide} loading={downloadingGuide}>
+            ¿Cómo leo estos campos? (PDF)
+          </Button>
+        </div>
 
         <div className="grid gap-4 sm:grid-cols-3">
           <Input
