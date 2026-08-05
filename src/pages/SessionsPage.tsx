@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ChevronDown, FolderOpen, Search } from 'lucide-react'
+import { ChevronDown, FolderOpen, Pencil, Search } from 'lucide-react'
 import { AppShell } from '../components/layout/AppShell'
 import { Button } from '../components/ui/Button'
 import { Table } from '../components/ui/Table'
@@ -9,6 +9,7 @@ import { Alert } from '../components/ui/Alert'
 import type { SessionRecord } from '../services/sessions'
 import { listSessions } from '../services/sessions'
 import { SessionFormModal } from './sessions/SessionFormModal'
+import { SessionEditModal } from './sessions/SessionEditModal'
 import { computeCycleProgress } from '../utils/cycleProgress'
 import { useAuth } from '../hooks/useAuth'
 
@@ -27,6 +28,7 @@ export function SessionsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
+  const [editingSession, setEditingSession] = useState<SessionRecord | null>(null)
   const [search, setSearch] = useState('')
   const [openPatientId, setOpenPatientId] = useState<string | null>(null)
   const [exportingExcel, setExportingExcel] = useState(false)
@@ -173,7 +175,17 @@ export function SessionsPage() {
                   {open && (
                     <div className="overflow-x-auto border-t border-slate-100">
                       <Table
-                        headers={['Fecha', 'Protocolo', 'Equipo / Bobina', 'Región / Lateralidad', 'Parámetros', 'Ciclo', 'Eventos adversos', 'Notas']}
+                        headers={[
+                          'Fecha',
+                          'Protocolo',
+                          'Equipo / Bobina',
+                          'Región / Lateralidad',
+                          'Parámetros',
+                          'Ciclo',
+                          'Eventos adversos',
+                          'Notas',
+                          ...(canRegister ? [''] : []),
+                        ]}
                         rows={folder.sessions.map((session) => (
                           <tr key={session.id} className="hover:bg-slate-50">
                             <td className="px-4 py-4 text-slate-500">
@@ -200,6 +212,17 @@ export function SessionsPage() {
                               )}
                             </td>
                             <td className="px-4 py-4 max-w-xs text-slate-500">{session.notes || '—'}</td>
+                            {canRegister && (
+                              <td className="px-4 py-4 text-right">
+                                <button
+                                  onClick={() => setEditingSession(session)}
+                                  title="Editar sesión"
+                                  className="text-slate-400 hover:text-teal-600"
+                                >
+                                  <Pencil size={15} />
+                                </button>
+                              </td>
+                            )}
                           </tr>
                         ))}
                       />
@@ -220,6 +243,17 @@ export function SessionsPage() {
           void load()
         }}
       />
+
+      {editingSession && (
+        <SessionEditModal
+          session={editingSession}
+          onClose={() => setEditingSession(null)}
+          onSaved={() => {
+            setEditingSession(null)
+            void load()
+          }}
+        />
+      )}
     </AppShell>
   )
 }

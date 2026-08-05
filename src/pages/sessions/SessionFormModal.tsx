@@ -6,7 +6,7 @@ import { Select } from '../../components/ui/Select'
 import { Textarea } from '../../components/ui/Textarea'
 import { Alert } from '../../components/ui/Alert'
 import { ChecklistForm } from './ChecklistForm'
-import { HeadMap1020 } from '../../components/sessions/HeadMap1020'
+import { SessionParametersFields, computeTrains } from '../../components/sessions/SessionParametersFields'
 import { ProtocolOptionGroups } from '../../components/protocols/ProtocolOptionGroups'
 import { useAuth } from '../../hooks/useAuth'
 import type { Patient } from '../../services/patients'
@@ -64,27 +64,12 @@ export function SessionFormModal({ open, onClose, onCreated }: { open: boolean; 
   const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const [showHeadMap, setShowHeadMap] = useState(false)
-  const [downloadingGuide, setDownloadingGuide] = useState(false)
-
-  async function handleDownloadGuide() {
-    setDownloadingGuide(true)
-    try {
-      const { downloadSessionParametersGuidePdf } = await import('../../utils/sessionParametersGuidePdf')
-      downloadSessionParametersGuidePdf()
-    } catch {
-      setError('No se pudo generar la guía. Recargá la página e intentá de nuevo.')
-    } finally {
-      setDownloadingGuide(false)
-    }
-  }
 
   useEffect(() => {
     if (!open) return
     setForm(emptyForm)
     setAnswers({})
     setError('')
-    setShowHeadMap(false)
     Promise.all([listPatients(), listProtocols(), listProtocolCategories(), listEquipment(), listCoils(), listActiveChecklistItems()])
       .then(([p, pr, cats, eq, co, items]) => {
         setPatients(p)
@@ -174,7 +159,7 @@ export function SessionFormModal({ open, onClose, onCreated }: { open: boolean; 
         rmt_pct: form.rmt_pct ? Number(form.rmt_pct) : null,
         motor_threshold: null,
         pulses: form.pulses ? Number(form.pulses) : null,
-        trains: trainsRounded,
+        trains: computeTrains(form).trainsRounded,
         duration_minutes: form.duration_minutes ? Number(form.duration_minutes) : null,
         clinical_response: form.clinical_response,
         adverse_events: form.adverse_events,
@@ -188,12 +173,6 @@ export function SessionFormModal({ open, onClose, onCreated }: { open: boolean; 
       setSaving(false)
     }
   }
-
-  const pulsesPerTrain = form.pulses ? Number(form.pulses) : null
-  const totalPulses = form.totalPulses ? Number(form.totalPulses) : null
-  const trainsExact = pulsesPerTrain && totalPulses ? totalPulses / pulsesPerTrain : null
-  const trainsRounded = trainsExact !== null ? Math.round(trainsExact) : null
-  const trainsMismatch = trainsExact !== null && trainsRounded !== null && Math.abs(trainsExact - trainsRounded) > 0.01
 
   return (
     <Modal open={open} title="Registrar sesión" size="lg" onClose={onClose} footer={
@@ -275,92 +254,7 @@ export function SessionFormModal({ open, onClose, onCreated }: { open: boolean; 
           </Select>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="flex items-end gap-2">
-            <Input
-              label="Región estimulada"
-              value={form.stimulated_region}
-              onChange={(e) => setForm({ ...form, stimulated_region: e.target.value })}
-              className="flex-1"
-            />
-            <Button type="button" variant="secondary" onClick={() => setShowHeadMap((v) => !v)}>
-              {showHeadMap ? 'Ocultar mapa' : 'Marcar en mapa 10-20'}
-            </Button>
-          </div>
-          <Select label="Lateralidad" value={form.laterality} onChange={(e) => setForm({ ...form, laterality: e.target.value })}>
-            <option value="">Sin especificar</option>
-            <option value="izquierda">Izquierda</option>
-            <option value="derecha">Derecha</option>
-            <option value="bilateral">Bilateral</option>
-          </Select>
-        </div>
-
-        {showHeadMap && (
-          <HeadMap1020
-            value={form.stimulated_region}
-            onSelect={(code, laterality) => setForm({ ...form, stimulated_region: code, laterality: laterality || form.laterality })}
-          />
-        )}
-
-        <div className="flex items-center justify-between">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Parámetros de estimulación</p>
-          <Button type="button" size="sm" variant="ghost" onClick={handleDownloadGuide} loading={downloadingGuide}>
-            ¿Cómo leo estos campos? (PDF)
-          </Button>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-3">
-          <Input
-            label="Frecuencia (Hz)"
-            type="number"
-            max={100}
-            helper="Neuro-MSX SLIM: hasta 100 Hz"
-            value={form.frequency_hz}
-            onChange={(e) => setForm({ ...form, frequency_hz: e.target.value })}
-          />
-          <Input
-            label="Intensidad (%)"
-            type="number"
-            min={1}
-            max={150}
-            helper='Ej. "100% MT" en la pantalla del equipo — % del umbral motor de reposo'
-            value={form.intensity_pct}
-            onChange={(e) => setForm({ ...form, intensity_pct: e.target.value })}
-          />
-          <Input
-            label="Umbral motor en reposo — RMT (% MSO)"
-            type="number"
-            helper="Medido en la pestaña UM del equipo, antes de iniciar la estimulación"
-            value={form.rmt_pct}
-            onChange={(e) => setForm({ ...form, rmt_pct: e.target.value })}
-          />
-        </div>
-        <div className="grid gap-4 sm:grid-cols-3">
-          <Input
-            label="Pulsos por tren"
-            type="number"
-            helper='Ej. "30" en "30 x 10,0 Hz" en la pantalla del equipo'
-            value={form.pulses}
-            onChange={(e) => setForm({ ...form, pulses: e.target.value })}
-          />
-          <Input
-            label="Total de pulsos"
-            type="number"
-            helper='El número grande de "___ pulsos" en la pantalla del equipo — no la frecuencia en Hz'
-            value={form.totalPulses}
-            onChange={(e) => setForm({ ...form, totalPulses: e.target.value })}
-          />
-          <Input
-            label="Número de trenes"
-            type="number"
-            disabled
-            helper={trainsMismatch ? undefined : 'Total de pulsos ÷ pulsos por tren (automático)'}
-            error={trainsMismatch ? 'No divide exacto — revisá pulsos por tren y total de pulsos' : undefined}
-            value={trainsRounded !== null ? String(trainsRounded) : ''}
-            onChange={() => {}}
-          />
-        </div>
-        <Input label="Duración (minutos)" type="number" value={form.duration_minutes} onChange={(e) => setForm({ ...form, duration_minutes: e.target.value })} />
+        <SessionParametersFields values={form} onChange={(patch) => setForm({ ...form, ...patch })} onError={setError} />
 
         <ChecklistForm items={checklistItems} answers={answers} onChange={handleAnswer} />
 

@@ -93,3 +93,15 @@ export async function createSession(
   void logAudit('create', 'emt_session', data.id, { patient_id: payload.patient_id, protocol_id: payload.protocol_id })
   return data as unknown as SessionRecord
 }
+
+export async function updateSession(
+  id: string,
+  payload: Partial<
+    Omit<SessionRecord, 'id' | 'patient_id' | 'clinician_id' | 'created_at' | 'updated_at' | 'patient' | 'protocol' | 'equipment' | 'coil' | 'cycle'>
+  >,
+) {
+  const { data, error } = await supabase.from('emt_sessions').update(payload).eq('id', id).select(SESSION_SELECT).single()
+  if (error) throw error
+  void logAudit('update', 'emt_session', id, payload)
+  return data as unknown as SessionRecord
+}
