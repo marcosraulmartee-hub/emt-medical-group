@@ -95,31 +95,46 @@ export function downloadSessionParametersGuidePdf() {
     y,
   )
 
-  y = addHeading(doc, '4. Pulsos por tren, número de trenes y total de pulsos', y)
+  y = addHeading(doc, '4. Pulsos por tren, total de pulsos y número de trenes', y)
   y = addParagraph(
     doc,
-    'La pantalla del equipo muestra tres números relacionados que se confunden fácilmente. Con el ejemplo "30 x 10,0 Hz ... x100 ... 3000 pulsos":',
+    'La app solo pide DOS números — los dos más fáciles de leer sin equivocarse en la pantalla del equipo — y calcula sola el tercero:',
     y,
   )
-  y = addBullet(doc, '"Pulsos por tren" = 30 (el primer número antes de la "x" junto a los Hz).', y)
-  y = addBullet(doc, '"Número de trenes" = 100 (el número junto a la segunda "x", más a la derecha del dibujo del tren).', y)
-  y = addBullet(doc, '"Total de pulsos" = 3000 (30 × 100) — la app lo calcula sola, solo sirve para verificar contra el número que muestra el equipo.', y)
+  y = addBullet(doc, '"Pulsos por tren" = el primer número antes de la "x", junto a los Hz (ej. en "40 x 20,0 Hz" es 40).', y)
+  y = addBullet(
+    doc,
+    '"Total de pulsos" = el número grande que dice "___ pulsos" en la pantalla (ej. "400 pulsos"). Es el dato más visible y confiable del equipo — copiá ese, no lo calcules a mano.',
+    y,
+  )
+  y = addBullet(
+    doc,
+    '"Número de trenes" lo calcula la app sola (total ÷ pulsos por tren) y aparece en gris, de solo lectura — no hace falta buscarlo en la pantalla del equipo.',
+    y,
+  )
+  doc.setFont('helvetica', 'bold')
+  y = addParagraph(
+    doc,
+    'Cuidado: en "40 x 20,0 Hz", el "20,0" es la FRECUENCIA, no el número de trenes — son dos números distintos que se ven parecidos. Por eso la app ya no pide el número de trenes directamente.',
+    y,
+  )
+  doc.setFont('helvetica', 'normal')
 
   y = addHeading(doc, '5. Ejemplo completo (sesión real)', y)
-  y = addParagraph(doc, 'Paciente: 33 años · Protocolo: Alcohol craving, Variant 2 · Sesión 1 de 20 · Área: dmPFC/ACC', y)
+  y = addParagraph(doc, 'Paciente: 35 años · Protocolo de depresión · Sesión 3 de 12 · Área: corteza dorsolateral prefrontal izquierda', y)
 
   autoTable(doc, {
     startY: y,
     margin: { left: MARGIN, right: 14 },
     head: [['Campo en la app', 'Valor', 'De dónde sale en la pantalla del equipo']],
     body: [
-      ['Frecuencia (Hz)', '10', '"30 x 10,0 Hz"'],
-      ['Intensidad (%)', '100', '"100% MT"'],
+      ['Frecuencia (Hz)', '20', '"40 x 20,0 Hz"'],
+      ['Intensidad (%)', '90', '"90% MT"'],
       ['Umbral motor en reposo — RMT', '(según pestaña UM)', 'Pestaña "UM", no visible en esta pantalla'],
-      ['Pulsos por tren', '30', '"30 x 10,0 Hz"'],
-      ['Número de trenes', '100', '"x100"'],
-      ['Total de pulsos', '3000 (automático)', '"3000 pulsos"'],
-      ['Región estimulada', 'dmPFC/ACC', '"Área de estimulación"'],
+      ['Pulsos por tren', '40', '"40 x 20,0 Hz"'],
+      ['Total de pulsos', '400', '"400 pulsos"'],
+      ['Número de trenes', '10 (automático)', 'No hace falta leerlo — 400 ÷ 40'],
+      ['Región estimulada', 'DLPFC izquierda', '"Área de estimulación"'],
     ],
     styles: { fontSize: 8.5, cellPadding: 2.5 },
     headStyles: { fillColor: NAVY, textColor: 255, fontStyle: 'bold' },

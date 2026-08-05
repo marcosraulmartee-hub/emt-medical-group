@@ -44,7 +44,7 @@ const emptyForm = {
   intensity_pct: '',
   rmt_pct: '',
   pulses: '',
-  trains: '',
+  totalPulses: '',
   duration_minutes: '',
   clinical_response: '',
   adverse_events: '',
@@ -174,7 +174,7 @@ export function SessionFormModal({ open, onClose, onCreated }: { open: boolean; 
         rmt_pct: form.rmt_pct ? Number(form.rmt_pct) : null,
         motor_threshold: null,
         pulses: form.pulses ? Number(form.pulses) : null,
-        trains: form.trains ? Number(form.trains) : null,
+        trains: trainsRounded,
         duration_minutes: form.duration_minutes ? Number(form.duration_minutes) : null,
         clinical_response: form.clinical_response,
         adverse_events: form.adverse_events,
@@ -188,6 +188,12 @@ export function SessionFormModal({ open, onClose, onCreated }: { open: boolean; 
       setSaving(false)
     }
   }
+
+  const pulsesPerTrain = form.pulses ? Number(form.pulses) : null
+  const totalPulses = form.totalPulses ? Number(form.totalPulses) : null
+  const trainsExact = pulsesPerTrain && totalPulses ? totalPulses / pulsesPerTrain : null
+  const trainsRounded = trainsExact !== null ? Math.round(trainsExact) : null
+  const trainsMismatch = trainsExact !== null && trainsRounded !== null && Math.abs(trainsExact - trainsRounded) > 0.01
 
   return (
     <Modal open={open} title="Registrar sesión" size="lg" onClose={onClose} footer={
@@ -338,18 +344,19 @@ export function SessionFormModal({ open, onClose, onCreated }: { open: boolean; 
             onChange={(e) => setForm({ ...form, pulses: e.target.value })}
           />
           <Input
-            label="Número de trenes"
-            type="number"
-            helper='Ej. "x100" en la pantalla del equipo'
-            value={form.trains}
-            onChange={(e) => setForm({ ...form, trains: e.target.value })}
-          />
-          <Input
             label="Total de pulsos"
             type="number"
+            helper='El número grande de "___ pulsos" en la pantalla del equipo — no la frecuencia en Hz'
+            value={form.totalPulses}
+            onChange={(e) => setForm({ ...form, totalPulses: e.target.value })}
+          />
+          <Input
+            label="Número de trenes"
+            type="number"
             disabled
-            helper="Pulsos por tren × número de trenes (automático)"
-            value={form.pulses && form.trains ? String(Number(form.pulses) * Number(form.trains)) : ''}
+            helper={trainsMismatch ? undefined : 'Total de pulsos ÷ pulsos por tren (automático)'}
+            error={trainsMismatch ? 'No divide exacto — revisá pulsos por tren y total de pulsos' : undefined}
+            value={trainsRounded !== null ? String(trainsRounded) : ''}
             onChange={() => {}}
           />
         </div>
