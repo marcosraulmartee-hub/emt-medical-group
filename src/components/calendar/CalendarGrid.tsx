@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { Appointment, AppointmentStatus } from '../../services/appointments'
-import { layoutEvents, timeToMinutes } from '../../utils/timeGrid'
+import { layoutEvents, minutesToLabel, timeToMinutes } from '../../utils/timeGrid'
 import { toISODate } from '../../utils/dates'
 
 const START_HOUR = 7
@@ -14,12 +14,6 @@ const STATUS_STYLE: Record<AppointmentStatus, string> = {
   reschedule_requested: 'bg-amber-50 border-amber-300 text-amber-800',
   cancelled: 'bg-red-50 border-red-200 text-red-500 line-through decoration-red-300',
   completed: 'bg-teal-50 border-teal-300 text-teal-800',
-}
-
-function hourLabel(hour: number): string {
-  const period = hour < 12 ? 'a.m.' : 'p.m.'
-  const h12 = hour % 12 === 0 ? 12 : hour % 12
-  return `${h12} ${period}`
 }
 
 export function CalendarGrid({
@@ -85,7 +79,7 @@ export function CalendarGrid({
         <div className="w-14 shrink-0">
           {hours.map((hour) => (
             <div key={hour} className="relative" style={{ height: PX_PER_HOUR }}>
-              <span className="absolute -top-2 right-2 text-[10px] text-slate-400">{hourLabel(hour)}</span>
+              <span className="absolute -top-2 right-2 text-[10px] text-slate-400">{minutesToLabel(hour * 60)}</span>
             </div>
           ))}
         </div>
@@ -135,7 +129,7 @@ export function CalendarGrid({
                         width: `calc(${widthPct}% - 4px)`,
                       }}
                     >
-                      <p className="font-semibold">{event.start_time.slice(0, 5)}</p>
+                      <p className="font-semibold">{minutesToLabel(timeToMinutes(event.start_time))}</p>
                       <p className="truncate">{event.patient?.full_name ?? '—'}</p>
                     </button>
                   )

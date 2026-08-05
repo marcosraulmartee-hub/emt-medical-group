@@ -3,6 +3,7 @@ import { Pencil } from 'lucide-react'
 import { Badge } from '../ui/Badge'
 import type { Appointment } from '../../services/appointments'
 import { categoryColor } from '../../utils/categoryColors'
+import { minutesToLabel, timeToMinutes } from '../../utils/timeGrid'
 
 const STATUS_LABEL: Record<Appointment['status'], string> = {
   pending: 'Pendiente',
@@ -18,13 +19,6 @@ const STATUS_TONE: Record<Appointment['status'], 'neutral' | 'success' | 'warnin
   reschedule_requested: 'warning',
   cancelled: 'danger',
   completed: 'info',
-}
-
-function formatHour(time: string) {
-  const [h, m] = time.split(':').map(Number)
-  const period = h < 12 ? 'a. m.' : 'p. m.'
-  const h12 = h % 12 === 0 ? 12 : h % 12
-  return `${h12}:${String(m).padStart(2, '0')} ${period}`
 }
 
 export function AgendaDayList({
@@ -97,7 +91,7 @@ export function AgendaDayList({
               const color = catIndex >= 0 ? categoryColor(catIndex) : null
               return (
                 <li key={a.id} className="flex items-center gap-3 px-4 py-3.5">
-                  <div className="w-20 shrink-0 text-sm font-medium text-slate-600">{formatHour(a.start_time)}</div>
+                  <div className="w-20 shrink-0 text-sm font-medium text-slate-600">{minutesToLabel(timeToMinutes(a.start_time))}</div>
                   <div className="h-8 w-0.5 shrink-0 rounded-full" style={{ backgroundColor: color?.dot ?? '#cbd5e1' }} />
                   <button
                     type="button"

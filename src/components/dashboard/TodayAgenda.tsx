@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Badge } from '../ui/Badge'
 import type { Appointment, AppointmentStatus } from '../../services/appointments'
+import { minutesToLabel, timeToMinutes } from '../../utils/timeGrid'
 
 const STATUS_LABEL: Record<AppointmentStatus, string> = {
   pending: 'Pendiente',
@@ -34,7 +35,9 @@ export function TodayAgenda({ appointments }: { appointments: Appointment[] }) {
           {appointments.slice(0, 6).map((appt) => (
             <li key={appt.id} className="flex items-center justify-between rounded-2xl px-1 py-2">
               <div className="flex items-center gap-3">
-                <span className="w-12 shrink-0 text-sm font-semibold text-midnight-900">{appt.start_time.slice(0, 5)}</span>
+                <span className="w-16 shrink-0 whitespace-nowrap text-sm font-semibold text-midnight-900">
+                  {minutesToLabel(timeToMinutes(appt.start_time))}
+                </span>
                 <div>
                   <p className="text-sm text-slate-700">{appt.patient?.full_name ?? '—'}</p>
                   {appt.clinician?.full_name && <p className="text-xs text-slate-400">{appt.clinician.full_name}</p>}

@@ -7,6 +7,7 @@ import type { Appointment } from '../../services/appointments'
 import type { AgendaSummaryRow } from '../../services/agendaSummary'
 import { buildAgendaSummary, listAppointmentsForSummary } from '../../services/agendaSummary'
 import { addDays, startOfWeek, toISODate } from '../../utils/dates'
+import { minutesToLabel, timeToMinutes } from '../../utils/timeGrid'
 
 type Range = 'hoy' | 'semana'
 
@@ -100,7 +101,7 @@ export function AgendaSummaryModal({ open, onClose }: { open: boolean; onClose: 
                 rows={rows.map(({ appointment: a, diagnosis, billing }) => (
                   <tr key={a.id} className="hover:bg-slate-50">
                     {range === 'semana' && <td className="px-4 py-3 text-slate-700">{a.date}</td>}
-                    <td className="px-4 py-3 text-slate-500">{a.start_time.slice(0, 5)}</td>
+                    <td className="px-4 py-3 text-slate-500">{minutesToLabel(timeToMinutes(a.start_time))}</td>
                     <td className="px-4 py-3 text-slate-700">{a.patient?.full_name ?? '—'}</td>
                     <td className="px-4 py-3 text-slate-500">{diagnosis ?? '—'}</td>
                     <td className="px-4 py-3 text-slate-500">{a.protocol?.name ?? '—'}</td>

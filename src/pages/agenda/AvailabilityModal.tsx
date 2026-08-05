@@ -7,6 +7,7 @@ import { listAppointmentsInRange } from '../../services/appointments'
 import type { AvailabilitySlot, DayAvailabilitySummary } from '../../services/availability'
 import { buildDayAvailability, buildWeekAvailability } from '../../services/availability'
 import { addDays, formatFullDate, startOfWeek, toISODate } from '../../utils/dates'
+import { minutesToLabel } from '../../utils/timeGrid'
 import { AppointmentFormModal } from './AppointmentFormModal'
 
 type Range = 'dia' | 'semana'
@@ -110,7 +111,7 @@ export function AvailabilityModal({ open, onClose }: { open: boolean; onClose: (
                 {daySlots.map((slot) => (
                   <li key={slot.start} className="flex items-center justify-between gap-3 px-4 py-3">
                     <span className="w-28 shrink-0 text-sm font-medium text-slate-600">
-                      {slot.start} – {slot.end}
+                      {minutesToLabel(slot.startMin)} – {minutesToLabel(slot.endMin)}
                     </span>
                     {slot.occupied ? (
                       <span className="min-w-0 flex-1 truncate text-sm text-slate-500">

@@ -4,6 +4,7 @@ import { Badge } from '../../components/ui/Badge'
 import type { Appointment, AppointmentStatus } from '../../services/appointments'
 import { buildWhatsAppShareUrl, openShareWindow } from '../../utils/share'
 import { buildAppointmentConfirmMessage } from '../../utils/messages'
+import { minutesToLabel, timeToMinutes } from '../../utils/timeGrid'
 
 const STATUS_LABEL: Record<AppointmentStatus, string> = {
   pending: 'Pendiente',
@@ -49,7 +50,7 @@ export function AppointmentDetailModal({
           <div>
             <p className="text-base font-semibold text-midnight-950">{appointment.patient?.full_name ?? '—'}</p>
             <p className="text-sm text-slate-500">
-              {appointment.date} · {appointment.start_time.slice(0, 5)}
+              {appointment.date} · {minutesToLabel(timeToMinutes(appointment.start_time))}
               {appointment.end_time ? ` – ${appointment.end_time.slice(0, 5)}` : ''}
             </p>
           </div>

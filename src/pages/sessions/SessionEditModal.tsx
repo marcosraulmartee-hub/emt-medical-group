@@ -7,7 +7,7 @@ import { Textarea } from '../../components/ui/Textarea'
 import { Alert } from '../../components/ui/Alert'
 import { ChecklistForm } from './ChecklistForm'
 import { SessionParametersFields, computeTrains } from '../../components/sessions/SessionParametersFields'
-import { ProtocolOptionGroups } from '../../components/protocols/ProtocolOptionGroups'
+import { ProtocolPicker } from '../../components/protocols/ProtocolPicker'
 import type { Protocol } from '../../services/protocols'
 import { listProtocols } from '../../services/protocols'
 import type { ProtocolCategory } from '../../services/protocolCategories'
@@ -159,10 +159,14 @@ export function SessionEditModal({
           <Input label="Hora" type="time" value={form.start_time} onChange={(e) => setForm({ ...form, start_time: e.target.value })} />
         </div>
 
-        <Select label="Protocolo" value={form.protocol_id} onChange={(e) => setForm({ ...form, protocol_id: e.target.value })}>
-          <option value="">Seleccioná un protocolo</option>
-          <ProtocolOptionGroups protocols={protocols} categories={protocolCategories} />
-        </Select>
+        <ProtocolPicker
+          label="Protocolo aplicado en esta sesión"
+          protocols={protocols}
+          categories={protocolCategories}
+          value={form.protocol_id}
+          onChange={(protocolId) => setForm({ ...form, protocol_id: protocolId })}
+          emptyLabel="Seleccioná un protocolo"
+        />
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Select label="Equipo" required value={form.equipment_id} onChange={(e) => setForm({ ...form, equipment_id: e.target.value })}>

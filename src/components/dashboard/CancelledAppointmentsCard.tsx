@@ -4,6 +4,7 @@ import { CalendarX, DollarSign } from 'lucide-react'
 import type { Appointment } from '../../services/appointments'
 import { getOutstandingBalanceByPatient, listAppointmentsForStats } from '../../services/stats'
 import { addDays, toISODate } from '../../utils/dates'
+import { minutesToLabel, timeToMinutes } from '../../utils/timeGrid'
 
 export function CancelledAppointmentsCard() {
   const [cancelled, setCancelled] = useState<Appointment[]>([])
@@ -54,7 +55,7 @@ export function CancelledAppointmentsCard() {
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium text-midnight-950">{a.patient?.full_name ?? '—'}</p>
                   <p className="text-xs text-slate-500">
-                    {a.date} · {a.start_time.slice(0, 5)} {a.protocol?.name ? `· ${a.protocol.name}` : ''}
+                    {a.date} · {minutesToLabel(timeToMinutes(a.start_time))} {a.protocol?.name ? `· ${a.protocol.name}` : ''}
                   </p>
                 </div>
                 {outstanding.has(a.patient_id) && (

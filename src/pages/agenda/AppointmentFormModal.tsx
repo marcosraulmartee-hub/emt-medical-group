@@ -14,7 +14,7 @@ import type { Protocol } from '../../services/protocols'
 import { listProtocols } from '../../services/protocols'
 import type { ProtocolCategory } from '../../services/protocolCategories'
 import { listProtocolCategories } from '../../services/protocolCategories'
-import { ProtocolOptionGroups } from '../../components/protocols/ProtocolOptionGroups'
+import { ProtocolPicker } from '../../components/protocols/ProtocolPicker'
 import { countAppointmentsOnDate, createAppointment } from '../../services/appointments'
 import { getSetting } from '../../services/clinicSettings'
 import { toISODate } from '../../utils/dates'
@@ -160,14 +160,13 @@ export function AppointmentFormModal({ open, defaultDate, defaultTime, onClose, 
             </option>
           ))}
         </Select>
-        <Select
+        <ProtocolPicker
           label="Protocolo (opcional)"
+          protocols={protocols}
+          categories={protocolCategories}
           value={form.protocol_id}
-          onChange={(e) => setForm({ ...form, protocol_id: e.target.value })}
-        >
-          <option value="">Sin definir</option>
-          <ProtocolOptionGroups protocols={protocols} categories={protocolCategories} />
-        </Select>
+          onChange={(protocolId) => setForm({ ...form, protocol_id: protocolId })}
+        />
         <Textarea label="Notas" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
       </div>
 

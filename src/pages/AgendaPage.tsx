@@ -34,7 +34,7 @@ export function AgendaPage() {
   const [cancellationsOpen, setCancellationsOpen] = useState(false)
   const [summaryOpen, setSummaryOpen] = useState(false)
   const [availabilityOpen, setAvailabilityOpen] = useState(false)
-  const [sendingTomorrow, setSendingTomorrow] = useState(false)
+  const [sendingAgendaFor, setSendingAgendaFor] = useState<'today' | 'tomorrow' | null>(null)
 
   const weekStart = startOfWeek(selectedDate)
   const rangeStart = view === 'day' ? selectedDate : weekStart
@@ -76,18 +76,18 @@ export function AgendaPage() {
     }
   }
 
-  async function handleSendTomorrow() {
-    setSendingTomorrow(true)
+  async function handleSendAgenda(which: 'today' | 'tomorrow') {
+    setSendingAgendaFor(which)
     setError('')
     try {
-      const tomorrow = addDays(new Date(), 1)
-      const iso = toISODate(tomorrow)
+      const targetDate = which === 'tomorrow' ? addDays(new Date(), 1) : new Date()
+      const iso = toISODate(targetDate)
       const data = await listAppointmentsInRange(iso, iso)
-      openShareWindow(buildWhatsAppShareUrl(null, buildDailyAgendaMessage(tomorrow, data)))
+      openShareWindow(buildWhatsAppShareUrl(null, buildDailyAgendaMessage(targetDate, data)))
     } catch {
-      setError('No se pudo preparar la agenda de mañana.')
+      setError(`No se pudo preparar la agenda de ${which === 'tomorrow' ? 'mañana' : 'hoy'}.`)
     } finally {
-      setSendingTomorrow(false)
+      setSendingAgendaFor(null)
     }
   }
 
@@ -103,7 +103,11 @@ export function AgendaPage() {
             <Button variant="secondary" onClick={() => setAvailabilityOpen(true)}>
               Ver disponibilidad
             </Button>
-            <Button variant="secondary" onClick={handleSendTomorrow} loading={sendingTomorrow}>
+            <Button variant="secondary" onClick={() => handleSendAgenda('today')} loading={sendingAgendaFor === 'today'}>
+              <MessageCircle size={16} className="mr-1.5" />
+              Enviar agenda de hoy
+            </Button>
+            <Button variant="secondary" onClick={() => handleSendAgenda('tomorrow')} loading={sendingAgendaFor === 'tomorrow'}>
               <MessageCircle size={16} className="mr-1.5" />
               Enviar agenda de mañana
             </Button>

@@ -9,6 +9,7 @@ import { listPatientsNeedingFollowUp } from '../../services/followUp'
 import { buildAppointmentConfirmMessage, buildFollowUpReminderMessage } from '../../utils/messages'
 import { buildWhatsAppShareUrl, openShareWindow } from '../../utils/share'
 import { addDays, toISODate } from '../../utils/dates'
+import { minutesToLabel, timeToMinutes } from '../../utils/timeGrid'
 
 export function PendingActionsCard({ showFollowUp }: { showFollowUp: boolean }) {
   const [pendingAppointments, setPendingAppointments] = useState<Appointment[]>([])
@@ -93,7 +94,7 @@ export function PendingActionsCard({ showFollowUp }: { showFollowUp: boolean }) 
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium text-midnight-950">{a.patient?.full_name ?? '—'}</p>
                       <p className="text-xs text-slate-500">
-                        {a.date} · {a.start_time.slice(0, 5)}
+                        {a.date} · {minutesToLabel(timeToMinutes(a.start_time))}
                       </p>
                     </div>
                     <div className="flex shrink-0 items-center gap-2">

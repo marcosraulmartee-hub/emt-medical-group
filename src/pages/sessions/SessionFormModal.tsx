@@ -7,7 +7,7 @@ import { Textarea } from '../../components/ui/Textarea'
 import { Alert } from '../../components/ui/Alert'
 import { ChecklistForm } from './ChecklistForm'
 import { SessionParametersFields, computeTrains } from '../../components/sessions/SessionParametersFields'
-import { ProtocolOptionGroups } from '../../components/protocols/ProtocolOptionGroups'
+import { ProtocolPicker } from '../../components/protocols/ProtocolPicker'
 import { useAuth } from '../../hooks/useAuth'
 import type { Patient } from '../../services/patients'
 import { listPatients } from '../../services/patients'
@@ -92,6 +92,13 @@ export function SessionFormModal({ open, onClose, onCreated }: { open: boolean; 
       .catch(() => setError('No se pudieron cargar los ciclos del paciente.'))
   }, [form.patient_id])
 
+  useEffect(() => {
+    if (!form.cycleChoice || form.cycleChoice === NEW_CYCLE) return
+    const selected = cycles.find((c) => c.id === form.cycleChoice)
+    if (selected) setForm((prev) => ({ ...prev, protocol_id: selected.protocol_id ?? '' }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.cycleChoice])
+
   function handleAnswer(code: string, answer: ChecklistAnswer) {
     setAnswers((prev) => ({ ...prev, [code]: answer }))
   }
@@ -107,6 +114,10 @@ export function SessionFormModal({ open, onClose, onCreated }: { open: boolean; 
     }
     if (form.cycleChoice === NEW_CYCLE && !form.newCycleProtocolId) {
       setError('Elegí el protocolo del nuevo ciclo.')
+      return
+    }
+    if (!form.protocol_id) {
+      setError('Seleccioná el protocolo aplicado en esta sesión.')
       return
     }
     const missingAnswer = checklistItems.some((item) => answers[item.code] === undefined)
@@ -126,7 +137,6 @@ export function SessionFormModal({ open, onClose, onCreated }: { open: boolean; 
     setError('')
     try {
       let cycleId = form.cycleChoice
-      let protocolId = form.protocol_id
       if (form.cycleChoice === NEW_CYCLE) {
         const cycle = await createTreatmentCycle({
           patient_id: form.patient_id,
@@ -135,11 +145,8 @@ export function SessionFormModal({ open, onClose, onCreated }: { open: boolean; 
           notes: null,
         })
         cycleId = cycle.id
-        protocolId = form.newCycleProtocolId
-      } else {
-        const selectedCycle = cycles.find((c) => c.id === form.cycleChoice)
-        protocolId = selectedCycle?.protocol_id ?? protocolId
       }
+      const protocolId = form.protocol_id
 
       await createSession({
         patient_id: form.patient_id,
@@ -211,15 +218,14 @@ export function SessionFormModal({ open, onClose, onCreated }: { open: boolean; 
 
         {form.cycleChoice === NEW_CYCLE && (
           <div className="grid gap-4 rounded-2xl bg-slate-50 p-4 sm:grid-cols-2">
-            <Select
+            <ProtocolPicker
               label="Protocolo del ciclo"
               required
+              protocols={protocols}
+              categories={protocolCategories}
               value={form.newCycleProtocolId}
-              onChange={(e) => setForm({ ...form, newCycleProtocolId: e.target.value })}
-            >
-              <option value="">Seleccioná un protocolo</option>
-              <ProtocolOptionGroups protocols={protocols} categories={protocolCategories} />
-            </Select>
+              onChange={(protocolId) => setForm({ ...form, newCycleProtocolId: protocolId, protocol_id: protocolId })}
+            />
             <Input
               label="Sesiones planificadas"
               type="number"
@@ -228,6 +234,18 @@ export function SessionFormModal({ open, onClose, onCreated }: { open: boolean; 
               onChange={(e) => setForm({ ...form, newCyclePlanned: Number(e.target.value) })}
             />
           </div>
+        )}
+
+        {form.cycleChoice && (
+          <ProtocolPicker
+            label="Protocolo aplicado en esta sesión"
+            required
+            protocols={protocols}
+            categories={protocolCategories}
+            value={form.protocol_id}
+            onChange={(protocolId) => setForm({ ...form, protocol_id: protocolId })}
+            emptyLabel="Seleccioná un protocolo"
+          />
         )}
 
         <div className="grid gap-4 sm:grid-cols-2">

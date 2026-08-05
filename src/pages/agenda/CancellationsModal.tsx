@@ -7,6 +7,7 @@ import { Alert } from '../../components/ui/Alert'
 import type { Appointment } from '../../services/appointments'
 import { getOutstandingBalanceByPatient, listAppointmentsForStats } from '../../services/stats'
 import { addDays, toISODate } from '../../utils/dates'
+import { minutesToLabel, timeToMinutes } from '../../utils/timeGrid'
 
 export function CancellationsModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [from, setFrom] = useState(() => toISODate(addDays(new Date(), -30)))
@@ -60,7 +61,7 @@ export function CancellationsModal({ open, onClose }: { open: boolean; onClose: 
               rows={cancelled.map((a) => (
                 <tr key={a.id} className="hover:bg-slate-50">
                   <td className="px-4 py-3 text-slate-700">{a.date}</td>
-                  <td className="px-4 py-3 text-slate-500">{a.start_time.slice(0, 5)}</td>
+                  <td className="px-4 py-3 text-slate-500">{minutesToLabel(timeToMinutes(a.start_time))}</td>
                   <td className="px-4 py-3 text-slate-500">{a.patient?.full_name ?? '—'}</td>
                   <td className="px-4 py-3 text-slate-500">{a.protocol?.name ?? '—'}</td>
                   <td className="px-4 py-3">

@@ -5,6 +5,7 @@ import { Input } from '../../components/ui/Input'
 import { Alert } from '../../components/ui/Alert'
 import type { Appointment } from '../../services/appointments'
 import { requestReschedule } from '../../services/appointments'
+import { minutesToLabel, timeToMinutes } from '../../utils/timeGrid'
 
 export function RescheduleModal({
   appointment,
@@ -53,7 +54,7 @@ export function RescheduleModal({
       <div className="space-y-4">
         {error && <Alert variant="error">{error}</Alert>}
         <p className="text-sm text-slate-500">
-          Fecha y hora actuales: {appointment.date} {appointment.start_time.slice(0, 5)}
+          Fecha y hora actuales: {appointment.date} {minutesToLabel(timeToMinutes(appointment.start_time))}
         </p>
         <Input label="Nueva fecha propuesta" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
         <Input label="Nueva hora propuesta" type="time" value={time} onChange={(e) => setTime(e.target.value)} />
