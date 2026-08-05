@@ -22,13 +22,14 @@ import { toISODate } from '../../utils/dates'
 interface AppointmentFormModalProps {
   open: boolean
   defaultDate: Date
+  defaultTime?: string
   onClose: () => void
   onCreated: () => void
 }
 
 const emptyForm = { patient_id: '', clinician_id: '', protocol_id: '', date: '', start_time: '09:00', end_time: '', notes: '' }
 
-export function AppointmentFormModal({ open, defaultDate, onClose, onCreated }: AppointmentFormModalProps) {
+export function AppointmentFormModal({ open, defaultDate, defaultTime, onClose, onCreated }: AppointmentFormModalProps) {
   const [patients, setPatients] = useState<Patient[]>([])
   const [staff, setStaff] = useState<Profile[]>([])
   const [protocols, setProtocols] = useState<Protocol[]>([])
@@ -41,7 +42,7 @@ export function AppointmentFormModal({ open, defaultDate, onClose, onCreated }: 
 
   useEffect(() => {
     if (!open) return
-    setForm({ ...emptyForm, date: toISODate(defaultDate) })
+    setForm({ ...emptyForm, date: toISODate(defaultDate), start_time: defaultTime ?? emptyForm.start_time })
     setError('')
     setCapacityWarning('')
     Promise.all([listPatients(), listUsers(), listProtocols(), listProtocolCategories()])
@@ -52,7 +53,7 @@ export function AppointmentFormModal({ open, defaultDate, onClose, onCreated }: 
         setProtocolCategories(cats)
       })
       .catch(() => setError('No se pudieron cargar pacientes/protocolos.'))
-  }, [open, defaultDate])
+  }, [open, defaultDate, defaultTime])
 
   useEffect(() => {
     if (!open || !form.date) return

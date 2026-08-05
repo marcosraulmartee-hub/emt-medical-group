@@ -14,6 +14,7 @@ import { AppointmentDetailModal } from './agenda/AppointmentDetailModal'
 import { RescheduleModal } from './agenda/RescheduleModal'
 import { CancellationsModal } from './agenda/CancellationsModal'
 import { AgendaSummaryModal } from './agenda/AgendaSummaryModal'
+import { AvailabilityModal } from './agenda/AvailabilityModal'
 import { useAuth } from '../hooks/useAuth'
 import { buildDailyAgendaMessage } from '../utils/messages'
 import { buildWhatsAppShareUrl, openShareWindow } from '../utils/share'
@@ -32,6 +33,7 @@ export function AgendaPage() {
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
   const [cancellationsOpen, setCancellationsOpen] = useState(false)
   const [summaryOpen, setSummaryOpen] = useState(false)
+  const [availabilityOpen, setAvailabilityOpen] = useState(false)
   const [sendingTomorrow, setSendingTomorrow] = useState(false)
 
   const weekStart = startOfWeek(selectedDate)
@@ -98,6 +100,9 @@ export function AgendaPage() {
             <p className="text-sm text-slate-500 capitalize">{formatFullDate(selectedDate)}</p>
           </div>
           <div className="flex flex-wrap gap-2">
+            <Button variant="secondary" onClick={() => setAvailabilityOpen(true)}>
+              Ver disponibilidad
+            </Button>
             <Button variant="secondary" onClick={handleSendTomorrow} loading={sendingTomorrow}>
               <MessageCircle size={16} className="mr-1.5" />
               Enviar agenda de mañana
@@ -213,6 +218,7 @@ export function AgendaPage() {
 
       <CancellationsModal open={cancellationsOpen} onClose={() => setCancellationsOpen(false)} />
       <AgendaSummaryModal open={summaryOpen} onClose={() => setSummaryOpen(false)} />
+      <AvailabilityModal open={availabilityOpen} onClose={() => setAvailabilityOpen(false)} />
     </AppShell>
   )
 }
