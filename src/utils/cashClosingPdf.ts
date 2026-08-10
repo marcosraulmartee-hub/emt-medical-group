@@ -2,6 +2,7 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import type { PaymentWithInvoice } from '../services/payments'
 import type { CashClosing } from '../services/cashClosings'
+import { drawBrandHeader } from './brandAssets'
 
 export function exportCashClosingPdf(
   dateISO: string,
@@ -18,16 +19,15 @@ export function exportCashClosingPdf(
   payments: PaymentWithInvoice[],
 ) {
   const doc = new jsPDF()
+  const y = drawBrandHeader(doc, { withContact: false })
 
-  doc.setFontSize(16)
-  doc.text('EMT Medical Group', 14, 18)
-  doc.setFontSize(10)
-  doc.text('Caja diaria — cierre', 14, 24)
+  doc.setFontSize(12)
+  doc.text('Caja diaria — cierre', 14, y + 6)
   doc.setFontSize(11)
-  doc.text(`Fecha: ${dateISO}`, 14, 34)
+  doc.text(`Fecha: ${dateISO}`, 14, y + 14)
 
   autoTable(doc, {
-    startY: 42,
+    startY: y + 20,
     head: [['Concepto', 'Monto (RD$)']],
     body: [
       ['Efectivo', totals.total_efectivo.toFixed(2)],
@@ -73,16 +73,15 @@ export function exportCashClosingPdf(
 
 export function exportCashClosingHistoryPdf(history: CashClosing[]) {
   const doc = new jsPDF()
+  const y = drawBrandHeader(doc, { withContact: false })
 
-  doc.setFontSize(16)
-  doc.text('EMT Medical Group', 14, 18)
-  doc.setFontSize(10)
-  doc.text('Historial de cierres de caja', 14, 24)
+  doc.setFontSize(12)
+  doc.text('Historial de cierres de caja', 14, y + 6)
   doc.setFontSize(9)
-  doc.text(`Generado ${new Date().toLocaleString('es-ES')}`, 14, 30)
+  doc.text(`Generado ${new Date().toLocaleString('es-ES')}`, 14, y + 12)
 
   autoTable(doc, {
-    startY: 36,
+    startY: y + 18,
     head: [['Fecha', 'Cobrado', 'Facturado', 'Efectivo contado', 'Diferencia', 'Cerrado por']],
     body: history.map((c) => [
       c.closing_date,

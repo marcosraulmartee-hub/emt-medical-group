@@ -2,6 +2,7 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import type { Invoice, InvoiceItem } from '../services/invoices'
 import type { Payment } from '../services/payments'
+import { drawBrandHeader } from './brandAssets'
 
 const STATUS_LABEL: Record<Invoice['status'], string> = {
   draft: 'Borrador',
@@ -11,13 +12,14 @@ const STATUS_LABEL: Record<Invoice['status'], string> = {
 
 export function exportInvoiceListPdf(invoices: Invoice[]) {
   const doc = new jsPDF()
+  let y = drawBrandHeader(doc, { withContact: false })
   doc.setFontSize(14)
-  doc.text('EMT Medical Group — Facturas', 14, 16)
+  doc.text('Facturas', 14, y + 6)
   doc.setFontSize(9)
-  doc.text(`Generado ${new Date().toLocaleString('es-ES')}`, 14, 22)
+  doc.text(`Generado ${new Date().toLocaleString('es-ES')}`, 14, y + 12)
 
   autoTable(doc, {
-    startY: 28,
+    startY: y + 18,
     head: [['No. Factura', 'Paciente', 'Estado', 'Fecha', 'Subtotal', 'Descuento', 'ITBIS', 'Total']],
     body: invoices.map((inv) => [
       inv.invoice_number ?? '—',
@@ -38,27 +40,24 @@ export function exportInvoiceListPdf(invoices: Invoice[]) {
 
 export function exportInvoicePdf(invoice: Invoice, items: InvoiceItem[], payments: Payment[]) {
   const doc = new jsPDF()
-
-  doc.setFontSize(16)
-  doc.text('EMT Medical Group', 14, 18)
-  doc.setFontSize(10)
-  doc.text('Clínica de neuromodulación (rTMS / EMT)', 14, 24)
+  let y = drawBrandHeader(doc)
+  y += 8
 
   doc.setFontSize(11)
-  doc.text(invoice.invoice_number ? `Factura: ${invoice.invoice_number}` : 'Borrador (sin emitir)', 14, 36)
-  doc.text(`Estado: ${STATUS_LABEL[invoice.status]}`, 14, 42)
-  doc.text(`Fecha de emisión: ${invoice.issue_date ?? '—'}`, 14, 48)
-  doc.text(`Paciente: ${invoice.patient?.full_name ?? '—'}`, 14, 54)
+  doc.text(invoice.invoice_number ? `Factura: ${invoice.invoice_number}` : 'Borrador (sin emitir)', 14, y)
+  doc.text(`Estado: ${STATUS_LABEL[invoice.status]}`, 14, y + 6)
+  doc.text(`Fecha de emisión: ${invoice.issue_date ?? '—'}`, 14, y + 12)
+  doc.text(`Paciente: ${invoice.patient?.full_name ?? '—'}`, 14, y + 18)
 
   autoTable(doc, {
-    startY: 62,
+    startY: y + 26,
     head: [['Descripción', 'Cant.', 'Precio', 'Monto']],
     body: items.map((item) => [item.description, String(item.quantity), item.unit_price.toFixed(2), item.amount.toFixed(2)]),
     styles: { fontSize: 9 },
     headStyles: { fillColor: [46, 200, 192] },
   })
 
-  let y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8
+  y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8
 
   doc.setFontSize(10)
   doc.text(`Subtotal: ${invoice.subtotal.toFixed(2)}`, 140, y)

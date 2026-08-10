@@ -1,4 +1,5 @@
 import jsPDF from 'jspdf'
+import { drawBrandHeader } from './brandAssets'
 
 const MARGIN = 14
 const MAX_WIDTH = 182
@@ -45,12 +46,10 @@ function addBullet(doc: jsPDF, text: string, y: number): number {
 
 export function downloadScaleGuidePdf() {
   const doc = new jsPDF()
-  let y = 20
+  let y = drawBrandHeader(doc, { withContact: false })
+  y += 4
 
   doc.setFont('helvetica', 'bold')
-  doc.setFontSize(18)
-  doc.text('EMT Medical Group', 105, y, { align: 'center' })
-  y += 8
   doc.setFontSize(13)
   doc.text('Guía de aplicación de escalas clínicas', 105, y, { align: 'center' })
   y += 6
