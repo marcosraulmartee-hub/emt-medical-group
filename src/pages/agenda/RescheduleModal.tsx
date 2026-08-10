@@ -3,6 +3,7 @@ import { Modal } from '../../components/ui/Modal'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { Alert } from '../../components/ui/Alert'
+import { TimePicker12h } from '../../components/ui/TimePicker12h'
 import type { Appointment } from '../../services/appointments'
 import { requestReschedule } from '../../services/appointments'
 import { minutesToLabel, timeToMinutes } from '../../utils/timeGrid'
@@ -57,7 +58,7 @@ export function RescheduleModal({
           Fecha y hora actuales: {appointment.date} {minutesToLabel(timeToMinutes(appointment.start_time))}
         </p>
         <Input label="Nueva fecha propuesta" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-        <Input label="Nueva hora propuesta" type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+        <TimePicker12h label="Nueva hora propuesta" value={time} onChange={setTime} />
       </div>
     </Modal>
   )

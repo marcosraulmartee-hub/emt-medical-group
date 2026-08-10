@@ -5,6 +5,7 @@ import { Input } from '../../components/ui/Input'
 import { Select } from '../../components/ui/Select'
 import { Textarea } from '../../components/ui/Textarea'
 import { Alert } from '../../components/ui/Alert'
+import { TimePicker12h } from '../../components/ui/TimePicker12h'
 import { ChecklistForm } from './ChecklistForm'
 import { SessionParametersFields, computeTrains } from '../../components/sessions/SessionParametersFields'
 import { ProtocolPicker } from '../../components/protocols/ProtocolPicker'
@@ -250,7 +251,7 @@ export function SessionFormModal({ open, onClose, onCreated }: { open: boolean; 
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Input label="Fecha" type="date" required value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
-          <Input label="Hora" type="time" value={form.start_time} onChange={(e) => setForm({ ...form, start_time: e.target.value })} />
+          <TimePicker12h label="Hora" value={form.start_time} onChange={(time) => setForm({ ...form, start_time: time })} />
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
