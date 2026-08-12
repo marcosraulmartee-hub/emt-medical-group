@@ -19,8 +19,8 @@ function sectionTitle(doc: jsPDF, x: number, width: number, title: string, y: nu
   return y + lines.length * 4.5 + 3
 }
 
-function checkboxItem(doc: jsPDF, x: number, width: number, text: string, y: number): number {
-  doc.rect(x, y - 2.8, 2.8, 2.8)
+function listItem(doc: jsPDF, x: number, width: number, text: string, y: number): number {
+  doc.text('•', x + 1, y - 0.3)
   const lines = doc.splitTextToSize(text, width - 6) as string[]
   lines.forEach((line, i) => doc.text(line, x + 5.5, y + i * 4))
   return y + lines.length * 4 + 2
@@ -29,7 +29,7 @@ function checkboxItem(doc: jsPDF, x: number, width: number, text: string, y: num
 function drawColumn(doc: jsPDF, x: number, width: number, title: string, items: string[], startY: number): number {
   let y = sectionTitle(doc, x, width, title, startY)
   for (const item of items) {
-    y = checkboxItem(doc, x, width, item, y)
+    y = listItem(doc, x, width, item, y)
   }
   return y
 }
@@ -154,7 +154,7 @@ export function downloadConsentPdf() {
     'Cirugía neurológica previa.',
     'Otra condición médica relevante.',
   ]) {
-    leftY = checkboxItem(doc, LEFT_X, COL_WIDTH, item, leftY)
+    leftY = listItem(doc, LEFT_X, COL_WIDTH, item, leftY)
   }
 
   rightY = drawColumn(
@@ -185,7 +185,7 @@ export function downloadConsentPdf() {
     'Autorizo el registro y almacenamiento de mi información clínica para fines asistenciales y de seguimiento médico.',
     'Autorizo voluntariamente la realización del tratamiento mediante Estimulación Magnética Transcraneal (EMT).',
   ]) {
-    y = checkboxItem(doc, LEFT_X, 182, item, y)
+    y = listItem(doc, LEFT_X, 182, item, y)
   }
 
   y += 3
