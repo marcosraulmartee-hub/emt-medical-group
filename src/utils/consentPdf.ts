@@ -19,19 +19,11 @@ function sectionTitle(doc: jsPDF, x: number, width: number, title: string, y: nu
   return y + lines.length * 4.5 + 3
 }
 
-function listItem(doc: jsPDF, x: number, width: number, text: string, y: number): number {
-  doc.text('•', x + 1, y - 0.3)
-  const lines = doc.splitTextToSize(text, width - 6) as string[]
-  lines.forEach((line, i) => doc.text(line, x + 5.5, y + i * 4))
-  return y + lines.length * 4 + 2
-}
-
-function drawColumn(doc: jsPDF, x: number, width: number, title: string, items: string[], startY: number): number {
+function paragraphSection(doc: jsPDF, x: number, width: number, title: string, paragraph: string, startY: number): number {
   let y = sectionTitle(doc, x, width, title, startY)
-  for (const item of items) {
-    y = listItem(doc, x, width, item, y)
-  }
-  return y
+  const lines = doc.splitTextToSize(paragraph, width) as string[]
+  lines.forEach((line, i) => doc.text(line, x, y + i * 4))
+  return y + lines.length * 4 + 4
 }
 
 export function downloadConsentPdf() {
@@ -65,32 +57,21 @@ export function downloadConsentPdf() {
   let leftY = y
   let rightY = y
 
-  leftY = drawColumn(
+  leftY = paragraphSection(
     doc,
     LEFT_X,
     COL_WIDTH,
     '1. INFORMACIÓN SOBRE EL PROCEDIMIENTO',
-    [
-      'Comprendo que la EMT es un procedimiento médico no invasivo.',
-      'Comprendo que utiliza pulsos magnéticos aplicados sobre determinadas regiones cerebrales.',
-      'Comprendo que el procedimiento no requiere anestesia.',
-      'Comprendo que permaneceré despierto durante las sesiones.',
-      'He tenido oportunidad de realizar preguntas y recibir respuestas satisfactorias.',
-    ],
+    'Comprendo que la EMT es un procedimiento médico no invasivo. Comprendo que utiliza pulsos magnéticos aplicados sobre determinadas regiones cerebrales. Comprendo que el procedimiento no requiere anestesia. Comprendo que permaneceré despierto durante las sesiones. He tenido oportunidad de realizar preguntas y recibir respuestas satisfactorias.',
     leftY,
   )
 
-  rightY = drawColumn(
+  rightY = paragraphSection(
     doc,
     RIGHT_X,
     COL_WIDTH,
-    '2. BENEFICIOS Y EXPECTATIVAS',
-    [
-      'La EMT puede contribuir a la mejoría de mis síntomas.',
-      'La respuesta al tratamiento puede variar entre pacientes.',
-      'No se me ha garantizado curación ni resultados específicos.',
-      'No se me ha garantizado remisión total de la enfermedad.',
-    ],
+    '2. EXPECTATIVAS DEL TRATAMIENTO',
+    'La EMT puede contribuir a la mejoría de mis síntomas. La respuesta al tratamiento puede variar entre pacientes. No se me ha garantizado curación ni resultados específicos, ni remisión total de la enfermedad.',
     rightY,
   )
 
@@ -98,34 +79,21 @@ export function downloadConsentPdf() {
   leftY = y
   rightY = y
 
-  leftY = drawColumn(
+  leftY = paragraphSection(
     doc,
     LEFT_X,
     COL_WIDTH,
     '3. ALTERNATIVAS TERAPÉUTICAS EXPLICADAS',
-    [
-      'Tratamiento farmacológico.',
-      'Psicoterapia.',
-      'Continuación del tratamiento actual.',
-      'Otras alternativas médicamente apropiadas según mi condición clínica.',
-    ],
+    'Se me han explicado como alternativas terapéuticas el tratamiento farmacológico, la psicoterapia, la continuación del tratamiento actual y otras alternativas médicamente apropiadas según mi condición clínica.',
     leftY,
   )
 
-  rightY = drawColumn(
+  rightY = paragraphSection(
     doc,
     RIGHT_X,
     COL_WIDTH,
     '4. POSIBLES EFECTOS ADVERSOS Y RIESGOS',
-    [
-      'Molestias o dolor leve en el cuero cabelludo.',
-      'Cefalea transitoria.',
-      'Sensación de hormigueo facial.',
-      'Fatiga posterior a la sesión.',
-      'Mareos pasajeros.',
-      'Empeoramiento temporal de síntomas.',
-      'Riesgo extremadamente bajo de convulsión aun siguiendo protocolos de seguridad.',
-    ],
+    'Se me han explicado los posibles efectos adversos y riesgos del tratamiento, entre ellos molestias o dolor leve en el cuero cabelludo, cefalea transitoria, sensación de hormigueo facial, fatiga posterior a la sesión, mareos pasajeros y empeoramiento temporal de síntomas. Comprendo que existe un riesgo extremadamente bajo de convulsión, aun siguiendo los protocolos de seguridad.',
     rightY,
   )
 
@@ -133,40 +101,21 @@ export function downloadConsentPdf() {
   leftY = y
   rightY = y
 
-  leftY = sectionTitle(doc, LEFT_X, COL_WIDTH, '5. DECLARACIÓN DE SEGURIDAD', leftY)
-  doc.setFont('helvetica', 'italic')
-  doc.setFontSize(7.5)
-  const safetyIntro = doc.splitTextToSize(
-    'Declaro haber informado al equipo médico sobre las siguientes condiciones:',
+  leftY = paragraphSection(
+    doc,
+    LEFT_X,
     COL_WIDTH,
-  ) as string[]
-  safetyIntro.forEach((line, i) => doc.text(line, LEFT_X, leftY + i * 3.5))
-  leftY += safetyIntro.length * 3.5 + 2
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(8.5)
-  for (const item of [
-    'Marcapasos u otro dispositivo electrónico implantado.',
-    'Implantes metálicos en cabeza o cuello.',
-    'Clips aneurismáticos.',
-    'Implante coclear.',
-    'Antecedentes de epilepsia o convulsiones.',
-    'Embarazo o sospecha de embarazo.',
-    'Cirugía neurológica previa.',
-    'Otra condición médica relevante.',
-  ]) {
-    leftY = listItem(doc, LEFT_X, COL_WIDTH, item, leftY)
-  }
+    '5. DECLARACIÓN DE SEGURIDAD',
+    'Declaro haber informado al equipo médico, en caso de presentarlas, sobre las siguientes condiciones: marcapasos u otro dispositivo electrónico implantado, implantes metálicos en cabeza o cuello, clips aneurismáticos, implante coclear, antecedentes de epilepsia o convulsiones, embarazo o sospecha de embarazo, cirugía neurológica previa, u otra condición médica relevante.',
+    leftY,
+  )
 
-  rightY = drawColumn(
+  rightY = paragraphSection(
     doc,
     RIGHT_X,
     COL_WIDTH,
     '6. INFORMACIÓN ECONÓMICA',
-    [
-      'Se me ha explicado el costo del tratamiento.',
-      'Se me ha explicado el número estimado de sesiones.',
-      'Comprendo las condiciones de pago establecidas por EMT Médica Group, S.R.L.',
-    ],
+    'Se me ha explicado el costo del tratamiento y el número estimado de sesiones, y comprendo las condiciones de pago establecidas por EMT Médica Group, S.R.L.',
     rightY,
   )
 
@@ -176,17 +125,14 @@ export function downloadConsentPdf() {
     y = 20
   }
 
-  y = sectionTitle(doc, LEFT_X, 182, '7. AUTORIZACIÓN Y VOLUNTARIEDAD', y)
-  for (const item of [
-    'He recibido información suficiente sobre beneficios, riesgos y alternativas.',
-    'He comprendido la información recibida.',
-    'Mi participación es voluntaria.',
-    'Puedo retirar mi consentimiento y suspender el tratamiento en cualquier momento.',
-    'Autorizo el registro y almacenamiento de mi información clínica para fines asistenciales y de seguimiento médico.',
-    'Autorizo voluntariamente la realización del tratamiento mediante Estimulación Magnética Transcraneal (EMT).',
-  ]) {
-    y = listItem(doc, LEFT_X, 182, item, y)
-  }
+  y = paragraphSection(
+    doc,
+    LEFT_X,
+    182,
+    '7. AUTORIZACIÓN Y VOLUNTARIEDAD',
+    'He recibido información suficiente sobre los beneficios, riesgos y alternativas del tratamiento, y he comprendido la información recibida. Mi participación es voluntaria y puedo retirar mi consentimiento y suspender el tratamiento en cualquier momento. Autorizo el registro y almacenamiento de mi información clínica para fines asistenciales y de seguimiento médico, y autorizo voluntariamente la realización del tratamiento mediante Estimulación Magnética Transcraneal (EMT).',
+    y,
+  )
 
   y += 3
   y = sectionTitle(doc, LEFT_X, 182, '8. DECLARACIÓN FINAL', y)
