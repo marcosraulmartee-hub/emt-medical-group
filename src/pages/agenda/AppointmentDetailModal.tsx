@@ -1,7 +1,11 @@
+import { useState } from 'react'
 import { Modal } from '../../components/ui/Modal'
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
+import { Alert } from '../../components/ui/Alert'
 import type { Appointment, AppointmentStatus } from '../../services/appointments'
+import { deleteAppointment } from '../../services/appointments'
 import { buildWhatsAppShareUrl, openShareWindow } from '../../utils/share'
 import { buildAppointmentConfirmMessage } from '../../utils/messages'
 import { minutesToLabel, timeToMinutes } from '../../utils/timeGrid'
@@ -30,6 +34,8 @@ export function AppointmentDetailModal({
   onComplete,
   onReschedule,
   onConfirmReschedule,
+  onEdit,
+  onDeleted,
 }: {
   appointment: Appointment
   onClose: () => void
@@ -38,14 +44,37 @@ export function AppointmentDetailModal({
   onComplete: (a: Appointment) => void
   onReschedule: (a: Appointment) => void
   onConfirmReschedule: (a: Appointment) => void
+  onEdit: (a: Appointment) => void
+  onDeleted: () => void
 }) {
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [error, setError] = useState('')
+
   function handleWhatsAppConfirm() {
     openShareWindow(buildWhatsAppShareUrl(appointment.patient?.phone, buildAppointmentConfirmMessage(appointment)))
+  }
+
+  async function handleDelete() {
+    setDeleting(true)
+    setError('')
+    try {
+      await deleteAppointment(appointment.id, {
+        date: appointment.date,
+        start_time: appointment.start_time,
+        patient_id: appointment.patient_id,
+      })
+      onDeleted()
+    } catch {
+      setError('No se pudo eliminar la cita.')
+      setDeleting(false)
+    }
   }
 
   return (
     <Modal open title="Detalle de la cita" size="sm" onClose={onClose}>
       <div className="space-y-4">
+        {error && <Alert variant="error">{error}</Alert>}
         <div className="flex items-start justify-between">
           <div>
             <p className="text-base font-semibold text-midnight-950">{appointment.patient?.full_name ?? '—'}</p>
@@ -108,8 +137,25 @@ export function AppointmentDetailModal({
               </Button>
             </>
           )}
+          <Button size="sm" variant="secondary" onClick={() => onEdit(appointment)}>
+            Editar
+          </Button>
+          <Button size="sm" variant="danger" onClick={() => setConfirmDeleteOpen(true)}>
+            Eliminar
+          </Button>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        title="Eliminar cita"
+        message={`Se elimina por completo la cita de ${appointment.patient?.full_name ?? 'este paciente'} del ${appointment.date}. No se puede deshacer.`}
+        confirmLabel="Eliminar"
+        danger
+        loading={deleting}
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmDeleteOpen(false)}
+      />
     </Modal>
   )
 }

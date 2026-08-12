@@ -83,6 +83,30 @@ export async function requestReschedule(id: string, requested_date: string, requ
   return data as unknown as Appointment
 }
 
+export async function updateAppointment(
+  id: string,
+  payload: Partial<{
+    patient_id: string
+    clinician_id: string | null
+    protocol_id: string | null
+    date: string
+    start_time: string
+    end_time: string | null
+    notes: string | null
+  }>,
+) {
+  const { data, error } = await supabase.from('appointments').update(payload).eq('id', id).select(APPOINTMENT_SELECT).single()
+  if (error) throw error
+  void logAudit('update', 'appointment', id, payload)
+  return data as unknown as Appointment
+}
+
+export async function deleteAppointment(id: string, snapshot: { date: string; start_time: string; patient_id: string }) {
+  const { error } = await supabase.from('appointments').delete().eq('id', id)
+  if (error) throw error
+  void logAudit('delete', 'appointment', id, snapshot)
+}
+
 export async function confirmReschedule(id: string) {
   const { data: current, error: fetchError } = await supabase
     .from('appointments')

@@ -11,6 +11,7 @@ import { CalendarGrid } from '../components/calendar/CalendarGrid'
 import { AgendaDayList } from '../components/agenda/AgendaDayList'
 import { AppointmentFormModal } from './agenda/AppointmentFormModal'
 import { AppointmentDetailModal } from './agenda/AppointmentDetailModal'
+import { AppointmentEditModal } from './agenda/AppointmentEditModal'
 import { RescheduleModal } from './agenda/RescheduleModal'
 import { CancellationsModal } from './agenda/CancellationsModal'
 import { AgendaSummaryModal } from './agenda/AgendaSummaryModal'
@@ -31,6 +32,7 @@ export function AgendaPage() {
   const [createOpen, setCreateOpen] = useState(false)
   const [rescheduling, setRescheduling] = useState<Appointment | null>(null)
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
+  const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null)
   const [cancellationsOpen, setCancellationsOpen] = useState(false)
   const [summaryOpen, setSummaryOpen] = useState(false)
   const [availabilityOpen, setAvailabilityOpen] = useState(false)
@@ -217,6 +219,25 @@ export function AgendaPage() {
             setRescheduling(a)
           }}
           onConfirmReschedule={handleConfirmReschedule}
+          onEdit={(a) => {
+            setSelectedAppointment(null)
+            setEditingAppointment(a)
+          }}
+          onDeleted={() => {
+            setSelectedAppointment(null)
+            void load()
+          }}
+        />
+      )}
+
+      {editingAppointment && (
+        <AppointmentEditModal
+          appointment={editingAppointment}
+          onClose={() => setEditingAppointment(null)}
+          onSaved={() => {
+            setEditingAppointment(null)
+            void load()
+          }}
         />
       )}
 
