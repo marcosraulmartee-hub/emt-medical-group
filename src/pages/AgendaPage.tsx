@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { MessageCircle } from 'lucide-react'
+import { Eye, MessageCircle } from 'lucide-react'
 import { AppShell } from '../components/layout/AppShell'
 import { Button } from '../components/ui/Button'
 import { Alert } from '../components/ui/Alert'
@@ -78,6 +78,11 @@ export function AgendaPage() {
     }
   }
 
+  function handleViewAgenda(which: 'today' | 'tomorrow') {
+    setSelectedDate(which === 'tomorrow' ? addDays(new Date(), 1) : new Date())
+    setView('day')
+  }
+
   async function handleSendAgenda(which: 'today' | 'tomorrow') {
     setSendingAgendaFor(which)
     setError('')
@@ -104,6 +109,14 @@ export function AgendaPage() {
           <div className="flex flex-wrap gap-2">
             <Button variant="secondary" onClick={() => setAvailabilityOpen(true)}>
               Ver disponibilidad
+            </Button>
+            <Button variant="secondary" onClick={() => handleViewAgenda('today')}>
+              <Eye size={16} className="mr-1.5" />
+              Ver agenda de hoy
+            </Button>
+            <Button variant="secondary" onClick={() => handleViewAgenda('tomorrow')}>
+              <Eye size={16} className="mr-1.5" />
+              Ver agenda de mañana
             </Button>
             <Button variant="secondary" onClick={() => handleSendAgenda('today')} loading={sendingAgendaFor === 'today'}>
               <MessageCircle size={16} className="mr-1.5" />
