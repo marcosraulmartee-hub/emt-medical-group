@@ -1,21 +1,28 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { CalendarClock, MessageCircle } from 'lucide-react'
+import { CalendarClock, MessageCircle, UserPlus } from 'lucide-react'
 import { Alert } from '../ui/Alert'
 import type { Appointment } from '../../services/appointments'
 import { listAppointmentsInRange, updateAppointmentStatus } from '../../services/appointments'
 import type { FollowUpPatient } from '../../services/followUp'
 import { listPatientsNeedingFollowUp } from '../../services/followUp'
+import type { IntakeSubmission } from '../../services/patientIntake'
+import { listUnreviewedIntakeSubmissions, markIntakeSubmissionReviewed } from '../../services/patientIntake'
 import { buildAppointmentConfirmMessage, buildFollowUpReminderMessage } from '../../utils/messages'
 import { buildWhatsAppShareUrl, openShareWindow } from '../../utils/share'
 import { addDays, toISODate } from '../../utils/dates'
 import { minutesToLabel, timeToMinutes } from '../../utils/timeGrid'
+import { useAuth } from '../../hooks/useAuth'
 
 export function PendingActionsCard({ showFollowUp }: { showFollowUp: boolean }) {
+  const { profile } = useAuth()
+  const showIntake = profile?.role === 'admin' || profile?.role === 'recepcionista'
   const [pendingAppointments, setPendingAppointments] = useState<Appointment[]>([])
   const [followUp, setFollowUp] = useState<FollowUpPatient[]>([])
+  const [intakeSubmissions, setIntakeSubmissions] = useState<IntakeSubmission[]>([])
   const [loading, setLoading] = useState(true)
   const [confirmingId, setConfirmingId] = useState<string | null>(null)
+  const [reviewingId, setReviewingId] = useState<string | null>(null)
   const [error, setError] = useState('')
 
   async function load() {
@@ -29,6 +36,7 @@ export function PendingActionsCard({ showFollowUp }: { showFollowUp: boolean }) 
         ),
       ]
       if (showFollowUp) tasks.push(listPatientsNeedingFollowUp().then((list) => setFollowUp(list.slice(0, 5))))
+      if (showIntake) tasks.push(listUnreviewedIntakeSubmissions().then(setIntakeSubmissions))
       await Promise.all(tasks)
     } catch {
       setError('No se pudieron cargar las acciones pendientes.')
@@ -40,7 +48,20 @@ export function PendingActionsCard({ showFollowUp }: { showFollowUp: boolean }) 
   useEffect(() => {
     void load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showFollowUp])
+  }, [showFollowUp, showIntake])
+
+  async function handleMarkReviewed(submission: IntakeSubmission) {
+    setReviewingId(submission.id)
+    setError('')
+    try {
+      await markIntakeSubmissionReviewed(submission.id)
+      setIntakeSubmissions((prev) => prev.filter((s) => s.id !== submission.id))
+    } catch {
+      setError('No se pudo marcar el registro como revisado.')
+    } finally {
+      setReviewingId(null)
+    }
+  }
 
   async function handleConfirm(appointment: Appointment) {
     setConfirmingId(appointment.id)
@@ -63,7 +84,7 @@ export function PendingActionsCard({ showFollowUp }: { showFollowUp: boolean }) 
     openShareWindow(buildWhatsAppShareUrl(patient.phone, buildFollowUpReminderMessage(patient.full_name)))
   }
 
-  if (!loading && !error && pendingAppointments.length === 0 && followUp.length === 0) {
+  if (!loading && !error && pendingAppointments.length === 0 && followUp.length === 0 && intakeSubmissions.length === 0) {
     return null
   }
 
@@ -75,7 +96,9 @@ export function PendingActionsCard({ showFollowUp }: { showFollowUp: boolean }) 
         </div>
         <div>
           <h3 className="text-sm font-semibold text-midnight-950">Acciones pendientes</h3>
-          <p className="text-xs text-slate-400">Citas por confirmar y pacientes en seguimiento.</p>
+          <p className="text-xs text-slate-400">
+            Citas por confirmar, pacientes en seguimiento{showIntake ? ' y registros nuevos por Google Forms' : ''}.
+          </p>
         </div>
       </div>
 
@@ -145,6 +168,42 @@ export function PendingActionsCard({ showFollowUp }: { showFollowUp: boolean }) 
               <Link to="/patients?followup=true" className="mt-2 inline-block text-xs text-teal-600 hover:underline">
                 Ver todos en seguimiento →
               </Link>
+            </div>
+          )}
+
+          {showIntake && intakeSubmissions.length > 0 && (
+            <div>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                Registros nuevos (Google Forms)
+              </p>
+              <ul className="space-y-2">
+                {intakeSubmissions.map((s) => (
+                  <li key={s.id} className="flex items-center justify-between gap-2 rounded-xl bg-slate-50 px-3 py-2">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-midnight-950">{s.patient?.full_name ?? 'Paciente sin vincular'}</p>
+                      <p className="text-xs text-slate-500">{new Date(s.created_at).toLocaleString('es-ES')}</p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      {s.patient_id && (
+                        <Link
+                          to={`/patients/${s.patient_id}`}
+                          title="Ver ficha del paciente"
+                          className="flex h-8 w-8 items-center justify-center rounded-full text-teal-600 hover:bg-teal-50"
+                        >
+                          <UserPlus size={16} />
+                        </Link>
+                      )}
+                      <button
+                        onClick={() => handleMarkReviewed(s)}
+                        disabled={reviewingId === s.id}
+                        className="rounded-lg bg-teal-500 px-2.5 py-1 text-xs font-medium text-white hover:bg-teal-600 disabled:opacity-40"
+                      >
+                        Marcar revisado
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
         </div>

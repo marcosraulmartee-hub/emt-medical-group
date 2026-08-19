@@ -2038,3 +2038,23 @@ on conflict (code) do nothing;
 -- =====================================================================
 
 alter table public.protocols add column if not exists sessions_per_week integer;
+
+-- =====================================================================
+-- MIGRACIÓN 030 — Notificación en la app cuando llega un envío nuevo del
+-- Google Form de auto-registro: recepcionista y admin ahora pueden ver y
+-- marcar como revisados los envíos (antes solo admin, y solo dentro de
+-- Configuración). El aviso por correo al admin se maneja aparte, desde el
+-- propio Google Apps Script (no requiere cambios en esta base de datos).
+-- Ejecutar este bloque completo en el SQL Editor de Supabase.
+-- =====================================================================
+
+alter table public.patient_intake_submissions add column if not exists reviewed boolean not null default false;
+
+drop policy if exists patient_intake_submissions_select on public.patient_intake_submissions;
+create policy patient_intake_submissions_select on public.patient_intake_submissions for select
+  using (public.current_app_role() in ('admin', 'recepcionista'));
+
+drop policy if exists patient_intake_submissions_update on public.patient_intake_submissions;
+create policy patient_intake_submissions_update on public.patient_intake_submissions for update
+  using (public.current_app_role() in ('admin', 'recepcionista'))
+  with check (public.current_app_role() in ('admin', 'recepcionista'));
