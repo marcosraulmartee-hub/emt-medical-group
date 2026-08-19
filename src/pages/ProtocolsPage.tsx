@@ -31,6 +31,7 @@ const emptyForm = {
   frequency_hz: '',
   intensity_pct: '',
   recommended_sessions: '',
+  sessions_per_week: '',
   price: '',
   is_active: true,
 }
@@ -108,6 +109,7 @@ export function ProtocolsPage() {
         'Frecuencia (Hz)': p.frequency_hz ?? '',
         'Intensidad (%)': p.intensity_pct ?? '',
         'Sesiones recomendadas': p.recommended_sessions ?? '',
+        'Sesiones por semana sugeridas': p.sessions_per_week ?? '',
         'Precio (RD$)': p.price ?? '',
         'Parámetros técnicos': p.technical_parameters || '',
         Contraindicaciones: p.contraindications || '',
@@ -153,6 +155,7 @@ export function ProtocolsPage() {
       frequency_hz: protocol.frequency_hz != null ? String(protocol.frequency_hz) : '',
       intensity_pct: protocol.intensity_pct != null ? String(protocol.intensity_pct) : '',
       recommended_sessions: protocol.recommended_sessions != null ? String(protocol.recommended_sessions) : '',
+      sessions_per_week: protocol.sessions_per_week != null ? String(protocol.sessions_per_week) : '',
       price: protocol.price != null ? String(protocol.price) : '',
       is_active: protocol.is_active,
     })
@@ -173,6 +176,7 @@ export function ProtocolsPage() {
         frequency_hz: form.frequency_hz ? Number(form.frequency_hz) : null,
         intensity_pct: form.intensity_pct ? Number(form.intensity_pct) : null,
         recommended_sessions: form.recommended_sessions ? Number(form.recommended_sessions) : null,
+        sessions_per_week: form.sessions_per_week ? Number(form.sessions_per_week) : null,
         price: form.price ? Number(form.price) : null,
       }
       if (editingId) {
@@ -288,12 +292,22 @@ export function ProtocolsPage() {
           <div className="overflow-hidden rounded-3xl bg-white shadow-card">
             <div className="overflow-x-auto">
               <Table
-                headers={['Nombre', 'Categoría', 'Sesiones recomendadas', 'Frecuencia (Hz)', 'Intensidad (%)', 'Precio (RD$)', '']}
+                headers={[
+                  'Nombre',
+                  'Categoría',
+                  'Sesiones recomendadas',
+                  'Sesiones/semana',
+                  'Frecuencia (Hz)',
+                  'Intensidad (%)',
+                  'Precio (RD$)',
+                  '',
+                ]}
                 rows={sortedForPricing.map((protocol) => (
                   <tr key={protocol.id} className="hover:bg-slate-50">
                     <td className="px-4 py-4 text-slate-700">{protocol.name}</td>
                     <td className="px-4 py-4 text-slate-500">{categoryLabel(protocol.category)}</td>
                     <td className="px-4 py-4 text-slate-500">{protocol.recommended_sessions ?? '—'}</td>
+                    <td className="px-4 py-4 text-slate-500">{protocol.sessions_per_week ?? '—'}</td>
                     <td className="px-4 py-4 text-slate-500">{protocol.frequency_hz ?? '—'}</td>
                     <td className="px-4 py-4 text-slate-500">{protocol.intensity_pct ?? '—'}</td>
                     <td className="px-4 py-4 text-slate-500">
@@ -382,6 +396,14 @@ export function ProtocolsPage() {
                 min={1}
                 value={form.recommended_sessions}
                 onChange={(e) => setForm({ ...form, recommended_sessions: e.target.value })}
+              />
+              <Input
+                label="Sesiones por semana sugeridas (opcional)"
+                type="number"
+                min={1}
+                helper='ej. "5" para un curso agudo de lunes a viernes'
+                value={form.sessions_per_week}
+                onChange={(e) => setForm({ ...form, sessions_per_week: e.target.value })}
               />
               <Input
                 label="Precio por sesión (RD$)"

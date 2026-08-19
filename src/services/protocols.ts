@@ -19,13 +19,14 @@ export interface Protocol {
   frequency_hz: number | null
   intensity_pct: number | null
   recommended_sessions: number | null
+  sessions_per_week: number | null
   price: number | null
   updated_at: string
   created_at: string
   is_active: boolean
 }
 
-const PROTOCOL_SELECT = `id, name, category, diagnosis, indication, objective, technical_parameters, contraindications, precautions, adverse_events, evidence_level, bibliography, clinical_guidelines, regulatory_body, version, frequency_hz, intensity_pct, recommended_sessions, price, updated_at, created_at, is_active`
+const PROTOCOL_SELECT = `id, name, category, diagnosis, indication, objective, technical_parameters, contraindications, precautions, adverse_events, evidence_level, bibliography, clinical_guidelines, regulatory_body, version, frequency_hz, intensity_pct, recommended_sessions, sessions_per_week, price, updated_at, created_at, is_active`
 
 export async function listProtocols() {
   const { data, error } = await supabase.from('protocols').select(PROTOCOL_SELECT).order('name')

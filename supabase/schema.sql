@@ -2030,3 +2030,11 @@ on conflict (role_code, permission_key) do nothing;
 insert into public.clinical_scales (code, label, description) values
   ('midas', 'MIDAS', 'Migraine Disability Assessment — días de discapacidad por migraña en los últimos 3 meses (Parte I: 0 en adelante; Grado I 0-5 mínima, II 6-10 leve, III 11-20 moderada, IV ≥21 severa)')
 on conflict (code) do nothing;
+
+-- =====================================================================
+-- MIGRACIÓN 029 — Sesiones por semana sugeridas (opcional) por protocolo,
+-- ej. "5" para un curso agudo de lunes a viernes.
+-- Ejecutar este bloque completo en el SQL Editor de Supabase.
+-- =====================================================================
+
+alter table public.protocols add column if not exists sessions_per_week integer;
