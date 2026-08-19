@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { Button } from '../../components/ui/Button'
 import { Modal } from '../../components/ui/Modal'
 import { Input } from '../../components/ui/Input'
-import { Select } from '../../components/ui/Select'
 import { Badge } from '../../components/ui/Badge'
 import { Alert } from '../../components/ui/Alert'
 import type { SessionPackage } from '../../services/sessionPackages'
@@ -11,7 +10,7 @@ import type { Protocol } from '../../services/protocols'
 import { listProtocols } from '../../services/protocols'
 import type { ProtocolCategory } from '../../services/protocolCategories'
 import { listProtocolCategories } from '../../services/protocolCategories'
-import { ProtocolOptionGroups } from '../../components/protocols/ProtocolOptionGroups'
+import { ProtocolPicker } from '../../components/protocols/ProtocolPicker'
 
 const STATUS_LABEL: Record<SessionPackage['status'], string> = {
   active: 'Activo',
@@ -131,10 +130,13 @@ export function PackagesSection({ patientId }: { patientId: string }) {
       >
         <div className="space-y-4">
           <Input label="Nombre del paquete" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-          <Select label="Protocolo (opcional)" value={form.protocol_id} onChange={(e) => setForm({ ...form, protocol_id: e.target.value })}>
-            <option value="">Sin definir</option>
-            <ProtocolOptionGroups protocols={protocols} categories={protocolCategories} />
-          </Select>
+          <ProtocolPicker
+            label="Protocolo (opcional)"
+            protocols={protocols}
+            categories={protocolCategories}
+            value={form.protocol_id}
+            onChange={(protocolId) => setForm({ ...form, protocol_id: protocolId })}
+          />
           <div className="grid gap-4 sm:grid-cols-2">
             <Input
               label="Sesiones incluidas"

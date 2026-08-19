@@ -9,6 +9,7 @@ import { TimePicker12h } from '../../components/ui/TimePicker12h'
 import type { Patient } from '../../services/patients'
 import { listPatients } from '../../services/patients'
 import { PatientCreateModal } from '../../components/patients/PatientCreateModal'
+import { PatientPicker } from '../../components/patients/PatientPicker'
 import type { Profile } from '../../types/auth'
 import { listUsers } from '../../services/users'
 import type { Protocol } from '../../services/protocols'
@@ -121,19 +122,13 @@ export function AppointmentFormModal({ open, defaultDate, defaultTime, onClose, 
         {capacityWarning && <Alert variant="info">{capacityWarning}</Alert>}
         <div className="flex items-end gap-2">
           <div className="flex-1">
-            <Select
+            <PatientPicker
               label="Paciente"
               required
+              patients={patients}
               value={form.patient_id}
-              onChange={(e) => setForm({ ...form, patient_id: e.target.value })}
-            >
-              <option value="">Seleccioná un paciente</option>
-              {patients.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.full_name}
-                </option>
-              ))}
-            </Select>
+              onChange={(patientId) => setForm({ ...form, patient_id: patientId })}
+            />
           </div>
           <Button type="button" variant="secondary" onClick={() => setNewPatientOpen(true)}>
             + Nuevo

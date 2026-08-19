@@ -7,6 +7,7 @@ import { Textarea } from '../../components/ui/Textarea'
 import { Alert } from '../../components/ui/Alert'
 import { TimePicker12h } from '../../components/ui/TimePicker12h'
 import { ProtocolPicker } from '../../components/protocols/ProtocolPicker'
+import { PatientPicker } from '../../components/patients/PatientPicker'
 import type { Patient } from '../../services/patients'
 import { listPatients } from '../../services/patients'
 import type { Profile } from '../../types/auth'
@@ -103,14 +104,13 @@ export function AppointmentEditModal({
       <div className="space-y-4">
         {error && <Alert variant="error">{error}</Alert>}
 
-        <Select label="Paciente" required value={form.patient_id} onChange={(e) => setForm({ ...form, patient_id: e.target.value })}>
-          <option value="">Seleccioná un paciente</option>
-          {patients.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.full_name}
-            </option>
-          ))}
-        </Select>
+        <PatientPicker
+          label="Paciente"
+          required
+          patients={patients}
+          value={form.patient_id}
+          onChange={(patientId) => setForm({ ...form, patient_id: patientId })}
+        />
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Input label="Fecha" type="date" required value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />

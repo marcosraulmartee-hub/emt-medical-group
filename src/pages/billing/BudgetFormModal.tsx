@@ -11,7 +11,8 @@ import type { Protocol } from '../../services/protocols'
 import { listProtocols } from '../../services/protocols'
 import type { ProtocolCategory } from '../../services/protocolCategories'
 import { listProtocolCategories } from '../../services/protocolCategories'
-import { ProtocolOptionGroups } from '../../components/protocols/ProtocolOptionGroups'
+import { ProtocolPicker } from '../../components/protocols/ProtocolPicker'
+import { PatientPicker } from '../../components/patients/PatientPicker'
 import type { PriceListItem } from '../../services/priceList'
 import { listPriceList } from '../../services/priceList'
 import { createBudget } from '../../services/budgets'
@@ -118,18 +119,15 @@ export function BudgetFormModal({ open, onClose, onCreated }: { open: boolean; o
         {error && <Alert variant="error">{error}</Alert>}
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Select label="Paciente" required value={patientId} onChange={(e) => setPatientId(e.target.value)}>
-            <option value="">Seleccioná un paciente</option>
-            {patients.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.full_name}
-              </option>
-            ))}
-          </Select>
-          <Select label="Protocolo (opcional)" value={protocolId} onChange={(e) => setProtocolId(e.target.value)}>
-            <option value="">Sin protocolo específico</option>
-            <ProtocolOptionGroups protocols={protocols} categories={protocolCategories} />
-          </Select>
+          <PatientPicker label="Paciente" required patients={patients} value={patientId} onChange={setPatientId} />
+          <ProtocolPicker
+            label="Protocolo (opcional)"
+            protocols={protocols}
+            categories={protocolCategories}
+            value={protocolId}
+            onChange={setProtocolId}
+            emptyLabel="Sin protocolo específico"
+          />
         </div>
 
         <div className="flex flex-wrap items-end gap-3 rounded-2xl bg-teal-50 p-4">

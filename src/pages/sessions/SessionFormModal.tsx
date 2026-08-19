@@ -9,6 +9,7 @@ import { TimePicker12h } from '../../components/ui/TimePicker12h'
 import { ChecklistForm } from './ChecklistForm'
 import { SessionParametersFields, computeTrains } from '../../components/sessions/SessionParametersFields'
 import { ProtocolPicker } from '../../components/protocols/ProtocolPicker'
+import { PatientPicker } from '../../components/patients/PatientPicker'
 import { useAuth } from '../../hooks/useAuth'
 import type { Patient } from '../../services/patients'
 import { listPatients } from '../../services/patients'
@@ -196,14 +197,13 @@ export function SessionFormModal({ open, onClose, onCreated }: { open: boolean; 
       <div className="space-y-4">
         {error && <Alert variant="error">{error}</Alert>}
 
-        <Select label="Paciente" required value={form.patient_id} onChange={(e) => setForm({ ...form, patient_id: e.target.value, cycleChoice: '' })}>
-          <option value="">Seleccioná un paciente</option>
-          {patients.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.full_name}
-            </option>
-          ))}
-        </Select>
+        <PatientPicker
+          label="Paciente"
+          required
+          patients={patients}
+          value={form.patient_id}
+          onChange={(patientId) => setForm({ ...form, patient_id: patientId, cycleChoice: '' })}
+        />
 
         {form.patient_id && (
           <Select label="Ciclo de tratamiento" required value={form.cycleChoice} onChange={(e) => setForm({ ...form, cycleChoice: e.target.value })}>

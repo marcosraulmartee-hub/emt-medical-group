@@ -5,6 +5,7 @@ import { Input } from '../../components/ui/Input'
 import { Select } from '../../components/ui/Select'
 import { Textarea } from '../../components/ui/Textarea'
 import { Alert } from '../../components/ui/Alert'
+import { PatientPicker } from '../../components/patients/PatientPicker'
 import type { Patient } from '../../services/patients'
 import { listPatients } from '../../services/patients'
 import type { PriceListItem } from '../../services/priceList'
@@ -103,14 +104,7 @@ export function InvoiceFormModal({ open, onClose, onCreated }: { open: boolean; 
       <div className="space-y-4">
         {error && <Alert variant="error">{error}</Alert>}
 
-        <Select label="Paciente" required value={patientId} onChange={(e) => setPatientId(e.target.value)}>
-          <option value="">Seleccioná un paciente</option>
-          {patients.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.full_name}
-            </option>
-          ))}
-        </Select>
+        <PatientPicker label="Paciente" required patients={patients} value={patientId} onChange={setPatientId} />
 
         <div className="space-y-3 rounded-2xl border border-slate-200 p-4">
           <div className="flex items-center justify-between">

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { AppShell } from '../components/layout/AppShell'
 import { Button } from '../components/ui/Button'
-import { Select } from '../components/ui/Select'
 import { Alert } from '../components/ui/Alert'
+import { PatientPicker } from '../components/patients/PatientPicker'
 import type { Patient } from '../services/patients'
 import { listPatients } from '../services/patients'
 import { buildMailtoUrl, buildWhatsAppShareUrl, openShareWindow } from '../utils/share'
@@ -105,14 +105,14 @@ export function ConsentPage() {
           </Alert>
         )}
 
-        <Select label="Paciente (opcional, para prellenar el mensaje)" value={patientId} onChange={(e) => setPatientId(e.target.value)} className="sm:max-w-xs">
-          <option value="">Sin paciente específico</option>
-          {patients.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.full_name}
-            </option>
-          ))}
-        </Select>
+        <PatientPicker
+          label="Paciente (opcional, para prellenar el mensaje)"
+          patients={patients}
+          value={patientId}
+          onChange={setPatientId}
+          emptyLabel="Sin paciente específico"
+          className="sm:max-w-xs"
+        />
 
         {DOCUMENTS.map((docDef) => (
           <div key={docDef.key} className="rounded-3xl bg-white p-6 shadow-card">
