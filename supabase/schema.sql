@@ -2020,3 +2020,13 @@ select role_code::public.app_role, permission_key from (values
   ('contable', 'protocol_categories.view'), ('contable', 'scales.view')
 ) as seed(role_code, permission_key)
 on conflict (role_code, permission_key) do nothing;
+
+-- =====================================================================
+-- MIGRACIÓN 028 — Escala MIDAS (Migraine Disability Assessment) para el
+-- seguimiento de pacientes con migraña.
+-- Ejecutar este bloque completo en el SQL Editor de Supabase.
+-- =====================================================================
+
+insert into public.clinical_scales (code, label, description) values
+  ('midas', 'MIDAS', 'Migraine Disability Assessment — días de discapacidad por migraña en los últimos 3 meses (Parte I: 0 en adelante; Grado I 0-5 mínima, II 6-10 leve, III 11-20 moderada, IV ≥21 severa)')
+on conflict (code) do nothing;
