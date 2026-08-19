@@ -2068,3 +2068,15 @@ create policy patient_intake_submissions_update on public.patient_intake_submiss
 -- =====================================================================
 
 alter table public.protocols alter column sessions_per_week type text using sessions_per_week::text;
+
+
+-- =====================================================================
+-- MIGRACIÓN 032 — Duración (minutos) y pulsos totales por protocolo,
+-- como referencia según la pantalla del equipo EMT. Editable por admin,
+-- médico y técnico — mismo acceso que el resto del protocolo, sin cambio
+-- de permisos.
+-- Ejecutar este bloque completo en el SQL Editor de Supabase.
+-- =====================================================================
+
+alter table public.protocols add column if not exists duration_minutes integer;
+alter table public.protocols add column if not exists total_pulses integer;

@@ -30,6 +30,8 @@ const emptyForm = {
   version: '1.0',
   frequency_hz: '',
   intensity_pct: '',
+  duration_minutes: '',
+  total_pulses: '',
   recommended_sessions: '',
   sessions_per_week: '',
   price: '',
@@ -108,6 +110,8 @@ export function ProtocolsPage() {
         Indicación: p.indication || '',
         'Frecuencia (Hz)': p.frequency_hz ?? '',
         'Intensidad (%)': p.intensity_pct ?? '',
+        'Duración (min)': p.duration_minutes ?? '',
+        'Pulsos totales': p.total_pulses ?? '',
         'Sesiones recomendadas': p.recommended_sessions ?? '',
         'Sesiones por semana sugeridas': p.sessions_per_week ?? '',
         'Precio (RD$)': p.price ?? '',
@@ -154,6 +158,8 @@ export function ProtocolsPage() {
       version: protocol.version ?? '1.0',
       frequency_hz: protocol.frequency_hz != null ? String(protocol.frequency_hz) : '',
       intensity_pct: protocol.intensity_pct != null ? String(protocol.intensity_pct) : '',
+      duration_minutes: protocol.duration_minutes != null ? String(protocol.duration_minutes) : '',
+      total_pulses: protocol.total_pulses != null ? String(protocol.total_pulses) : '',
       recommended_sessions: protocol.recommended_sessions != null ? String(protocol.recommended_sessions) : '',
       sessions_per_week: protocol.sessions_per_week ?? '',
       price: protocol.price != null ? String(protocol.price) : '',
@@ -175,6 +181,8 @@ export function ProtocolsPage() {
         ...form,
         frequency_hz: form.frequency_hz ? Number(form.frequency_hz) : null,
         intensity_pct: form.intensity_pct ? Number(form.intensity_pct) : null,
+        duration_minutes: form.duration_minutes ? Number(form.duration_minutes) : null,
+        total_pulses: form.total_pulses ? Number(form.total_pulses) : null,
         recommended_sessions: form.recommended_sessions ? Number(form.recommended_sessions) : null,
         sessions_per_week: form.sessions_per_week.trim() ? form.sessions_per_week.trim() : null,
         price: form.price ? Number(form.price) : null,
@@ -299,6 +307,8 @@ export function ProtocolsPage() {
                   'Sesiones/semana',
                   'Frecuencia (Hz)',
                   'Intensidad (%)',
+                  'Duración (min)',
+                  'Pulsos totales',
                   'Precio (RD$)',
                   '',
                 ]}
@@ -310,6 +320,8 @@ export function ProtocolsPage() {
                     <td className="px-4 py-4 text-slate-500">{protocol.sessions_per_week ?? '—'}</td>
                     <td className="px-4 py-4 text-slate-500">{protocol.frequency_hz ?? '—'}</td>
                     <td className="px-4 py-4 text-slate-500">{protocol.intensity_pct ?? '—'}</td>
+                    <td className="px-4 py-4 text-slate-500">{protocol.duration_minutes ?? '—'}</td>
+                    <td className="px-4 py-4 text-slate-500">{protocol.total_pulses ?? '—'}</td>
                     <td className="px-4 py-4 text-slate-500">
                       {protocol.price != null ? `RD$ ${protocol.price.toLocaleString('es-DO')}` : '—'}
                     </td>
@@ -383,6 +395,20 @@ export function ProtocolsPage() {
                 helper='% del umbral motor de reposo, ej. "100% MT"'
                 value={form.intensity_pct}
                 onChange={(e) => setForm({ ...form, intensity_pct: e.target.value })}
+              />
+              <Input
+                label="Duración (minutos)"
+                type="number"
+                min={0}
+                value={form.duration_minutes}
+                onChange={(e) => setForm({ ...form, duration_minutes: e.target.value })}
+              />
+              <Input
+                label="Pulsos totales"
+                type="number"
+                min={0}
+                value={form.total_pulses}
+                onChange={(e) => setForm({ ...form, total_pulses: e.target.value })}
               />
             </div>
           </div>
