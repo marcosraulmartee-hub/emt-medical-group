@@ -13,8 +13,10 @@ import { AgendaPage } from './pages/AgendaPage'
 import { PatientsPage } from './pages/PatientsPage'
 import { PatientDetailPage } from './pages/PatientDetailPage'
 import { ProtocolsPage } from './pages/ProtocolsPage'
+import { ProtocolCategoriesPage } from './pages/ProtocolCategoriesPage'
 import { ConsentPage } from './pages/ConsentPage'
 import { SessionsPage } from './pages/SessionsPage'
+import { ScalesPage } from './pages/ScalesPage'
 import { BillingPage } from './pages/BillingPage'
 import { ResearchPage } from './pages/ResearchPage'
 import { ReportsPage } from './pages/ReportsPage'
@@ -47,11 +49,17 @@ export default function App() {
             <Route element={<PermissionRoute perm="protocols.view" />}>
               <Route path="/protocols" element={<ProtocolsPage />} />
             </Route>
+            <Route element={<PermissionRoute perm="protocol_categories.view" />}>
+              <Route path="/protocol-categories" element={<ProtocolCategoriesPage />} />
+            </Route>
             <Route element={<PermissionRoute perm="consents.view" />}>
               <Route path="/consents" element={<ConsentPage />} />
             </Route>
             <Route element={<PermissionRoute perm="sessions.view" />}>
               <Route path="/sessions" element={<SessionsPage />} />
+            </Route>
+            <Route element={<PermissionRoute perm="scales.view" />}>
+              <Route path="/scales" element={<ScalesPage />} />
             </Route>
             <Route element={<PermissionRoute perm="research.view" />}>
               <Route path="/research" element={<ResearchPage />} />

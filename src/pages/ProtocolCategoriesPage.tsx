@@ -1,16 +1,21 @@
 import { useEffect, useState } from 'react'
-import { Button } from '../../components/ui/Button'
-import { Table } from '../../components/ui/Table'
-import { Modal } from '../../components/ui/Modal'
-import { Input } from '../../components/ui/Input'
-import { Textarea } from '../../components/ui/Textarea'
-import { Alert } from '../../components/ui/Alert'
-import type { ProtocolCategory } from '../../services/protocolCategories'
-import { createProtocolCategory, listProtocolCategories, updateProtocolCategory } from '../../services/protocolCategories'
+import { AppShell } from '../components/layout/AppShell'
+import { Button } from '../components/ui/Button'
+import { Table } from '../components/ui/Table'
+import { Modal } from '../components/ui/Modal'
+import { Input } from '../components/ui/Input'
+import { Textarea } from '../components/ui/Textarea'
+import { Alert } from '../components/ui/Alert'
+import type { ProtocolCategory } from '../services/protocolCategories'
+import { createProtocolCategory, listProtocolCategories, updateProtocolCategory } from '../services/protocolCategories'
+import { useAuth } from '../hooks/useAuth'
 
 const emptyForm = { code: '', label: '', description: '' }
 
-export function ProtocolCategoriesSection() {
+export function ProtocolCategoriesPage() {
+  const { profile } = useAuth()
+  const canEdit = profile?.role === 'admin' || profile?.role === 'medico' || profile?.role === 'tecnico'
+
   const [items, setItems] = useState<ProtocolCategory[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -64,43 +69,45 @@ export function ProtocolCategoriesSection() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-base font-semibold text-midnight-950">Categorías de protocolo</h3>
-          <p className="text-sm text-slate-500">Agrupan los protocolos EMT (rTMS, iTBS, cTBS, tDCS, etc.).</p>
-        </div>
-        <Button size="sm" onClick={openCreate}>
-          Nueva categoría
-        </Button>
-      </div>
-
-      {error && <Alert variant="error">{error}</Alert>}
-
-      <div className="overflow-hidden rounded-3xl bg-white shadow-card">
-        {loading ? (
-          <div className="p-6 text-slate-500">Cargando...</div>
-        ) : items.length === 0 ? (
-          <div className="p-6 text-slate-500">No hay categorías registradas.</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <Table
-              headers={['Código', 'Nombre', 'Descripción', '']}
-              rows={items.map((item) => (
-                <tr key={item.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-4 text-slate-700">{item.code}</td>
-                  <td className="px-4 py-4 text-slate-500">{item.label}</td>
-                  <td className="px-4 py-4 text-slate-500">{item.description || '—'}</td>
-                  <td className="px-4 py-4 text-right">
-                    <button className="text-sm text-teal-600 hover:underline" onClick={() => openEdit(item)}>
-                      Editar
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            />
+    <AppShell title="Categorías de protocolo">
+      <div className="space-y-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-midnight-950">Categorías de protocolo</h2>
+            <p className="text-sm text-slate-500">Agrupan los protocolos EMT (rTMS, iTBS, cTBS, tDCS, etc.).</p>
           </div>
-        )}
+          {canEdit && <Button onClick={openCreate}>Nueva categoría</Button>}
+        </div>
+
+        {error && <Alert variant="error">{error}</Alert>}
+
+        <div className="overflow-hidden rounded-3xl bg-white shadow-card">
+          {loading ? (
+            <div className="p-6 text-slate-500">Cargando...</div>
+          ) : items.length === 0 ? (
+            <div className="p-6 text-slate-500">No hay categorías registradas.</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table
+                headers={['Código', 'Nombre', 'Descripción', ...(canEdit ? [''] : [])]}
+                rows={items.map((item) => (
+                  <tr key={item.id} className="hover:bg-slate-50">
+                    <td className="px-4 py-4 text-slate-700">{item.code}</td>
+                    <td className="px-4 py-4 text-slate-500">{item.label}</td>
+                    <td className="px-4 py-4 text-slate-500">{item.description || '—'}</td>
+                    {canEdit && (
+                      <td className="px-4 py-4 text-right">
+                        <button className="text-sm text-teal-600 hover:underline" onClick={() => openEdit(item)}>
+                          Editar
+                        </button>
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              />
+            </div>
+          )}
+        </div>
       </div>
 
       <Modal
@@ -135,6 +142,6 @@ export function ProtocolCategoriesSection() {
           />
         </div>
       </Modal>
-    </div>
+    </AppShell>
   )
 }

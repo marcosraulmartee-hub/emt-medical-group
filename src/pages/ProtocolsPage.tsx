@@ -28,10 +28,17 @@ const emptyForm = {
   clinical_guidelines: '',
   regulatory_body: '',
   version: '1.0',
+  frequency_hz: '',
+  intensity_pct: '',
+  recommended_sessions: '',
+  price: '',
   is_active: true,
 }
 
+type Tab = 'list' | 'pricing'
+
 export function ProtocolsPage() {
+  const [tab, setTab] = useState<Tab>('list')
   const [protocols, setProtocols] = useState<Protocol[]>([])
   const [categories, setCategories] = useState<ProtocolCategory[]>([])
   const [loading, setLoading] = useState(true)
@@ -86,6 +93,8 @@ export function ProtocolsPage() {
       .sort((a, b) => a.label.localeCompare(b.label))
   }, [filtered, categories])
 
+  const sortedForPricing = useMemo(() => [...filtered].sort((a, b) => a.name.localeCompare(b.name)), [filtered])
+
   async function handleExportExcel() {
     setExportingExcel(true)
     setExportError('')
@@ -96,6 +105,10 @@ export function ProtocolsPage() {
         Categoría: categoryLabel(p.category),
         Diagnóstico: p.diagnosis || '',
         Indicación: p.indication || '',
+        'Frecuencia (Hz)': p.frequency_hz ?? '',
+        'Intensidad (%)': p.intensity_pct ?? '',
+        'Sesiones recomendadas': p.recommended_sessions ?? '',
+        'Precio (RD$)': p.price ?? '',
         'Parámetros técnicos': p.technical_parameters || '',
         Contraindicaciones: p.contraindications || '',
         'Nivel de evidencia': p.evidence_level || '',
@@ -137,6 +150,10 @@ export function ProtocolsPage() {
       clinical_guidelines: protocol.clinical_guidelines ?? '',
       regulatory_body: protocol.regulatory_body ?? '',
       version: protocol.version ?? '1.0',
+      frequency_hz: protocol.frequency_hz != null ? String(protocol.frequency_hz) : '',
+      intensity_pct: protocol.intensity_pct != null ? String(protocol.intensity_pct) : '',
+      recommended_sessions: protocol.recommended_sessions != null ? String(protocol.recommended_sessions) : '',
+      price: protocol.price != null ? String(protocol.price) : '',
       is_active: protocol.is_active,
     })
     setFormError('')
@@ -151,10 +168,17 @@ export function ProtocolsPage() {
     setSaving(true)
     setFormError('')
     try {
+      const payload = {
+        ...form,
+        frequency_hz: form.frequency_hz ? Number(form.frequency_hz) : null,
+        intensity_pct: form.intensity_pct ? Number(form.intensity_pct) : null,
+        recommended_sessions: form.recommended_sessions ? Number(form.recommended_sessions) : null,
+        price: form.price ? Number(form.price) : null,
+      }
       if (editingId) {
-        await updateProtocol(editingId, form)
+        await updateProtocol(editingId, payload)
       } else {
-        await createProtocol(form)
+        await createProtocol(payload)
       }
       setModalOpen(false)
       await load()
@@ -181,12 +205,33 @@ export function ProtocolsPage() {
           </div>
         </div>
 
+        <div className="flex gap-2 rounded-2xl bg-white p-1.5 shadow-card sm:w-fit">
+          <button
+            onClick={() => setTab('list')}
+            className={
+              'rounded-xl px-4 py-2 text-sm font-medium transition ' +
+              (tab === 'list' ? 'bg-teal-500 text-white' : 'text-slate-600 hover:bg-slate-100')
+            }
+          >
+            Protocolos
+          </button>
+          <button
+            onClick={() => setTab('pricing')}
+            className={
+              'rounded-xl px-4 py-2 text-sm font-medium transition ' +
+              (tab === 'pricing' ? 'bg-teal-500 text-white' : 'text-slate-600 hover:bg-slate-100')
+            }
+          >
+            Precios y sesiones
+          </button>
+        </div>
+
         {exportError && <Alert variant="error">{exportError}</Alert>}
 
         {categories.length === 0 && !loading && (
           <Alert variant="info">
-            Todavía no hay categorías de protocolo cargadas. Creá al menos una en Configuración → Categorías de protocolo antes
-            de agregar protocolos.
+            Todavía no hay categorías de protocolo cargadas. Creá al menos una en Categorías de protocolo antes de agregar
+            protocolos.
           </Alert>
         )}
 
@@ -203,7 +248,7 @@ export function ProtocolsPage() {
           <div className="rounded-3xl bg-white p-6 text-red-600 shadow-card">{error}</div>
         ) : filtered.length === 0 ? (
           <div className="rounded-3xl bg-white p-6 text-slate-500 shadow-card">No hay protocolos cargados.</div>
-        ) : (
+        ) : tab === 'list' ? (
           <div className="space-y-5">
             {groupedByCategory.map((group) => (
               <div key={group.code} className="overflow-hidden rounded-3xl bg-white shadow-card">
@@ -215,11 +260,12 @@ export function ProtocolsPage() {
                 </div>
                 <div className="overflow-x-auto">
                   <Table
-                    headers={['Nombre', 'Diagnóstico', 'Versión', 'Estado', '']}
+                    headers={['Nombre', 'Diagnóstico', 'Sesiones', 'Versión', 'Estado', '']}
                     rows={group.protocols.map((protocol) => (
                       <tr key={protocol.id} className="hover:bg-slate-50">
                         <td className="px-4 py-4 text-slate-700">{protocol.name}</td>
                         <td className="px-4 py-4 text-slate-500">{protocol.diagnosis || '—'}</td>
+                        <td className="px-4 py-4 text-slate-500">{protocol.recommended_sessions ?? '—'}</td>
                         <td className="px-4 py-4 text-slate-500">{protocol.version}</td>
                         <td className="px-4 py-4">
                           <Badge tone={protocol.is_active ? 'success' : 'neutral'}>
@@ -237,6 +283,31 @@ export function ProtocolsPage() {
                 </div>
               </div>
             ))}
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-3xl bg-white shadow-card">
+            <div className="overflow-x-auto">
+              <Table
+                headers={['Nombre', 'Categoría', 'Sesiones recomendadas', 'Frecuencia (Hz)', 'Intensidad (%)', 'Precio (RD$)', '']}
+                rows={sortedForPricing.map((protocol) => (
+                  <tr key={protocol.id} className="hover:bg-slate-50">
+                    <td className="px-4 py-4 text-slate-700">{protocol.name}</td>
+                    <td className="px-4 py-4 text-slate-500">{categoryLabel(protocol.category)}</td>
+                    <td className="px-4 py-4 text-slate-500">{protocol.recommended_sessions ?? '—'}</td>
+                    <td className="px-4 py-4 text-slate-500">{protocol.frequency_hz ?? '—'}</td>
+                    <td className="px-4 py-4 text-slate-500">{protocol.intensity_pct ?? '—'}</td>
+                    <td className="px-4 py-4 text-slate-500">
+                      {protocol.price != null ? `RD$ ${protocol.price.toLocaleString('es-DO')}` : '—'}
+                    </td>
+                    <td className="px-4 py-4 text-right">
+                      <button className="text-sm text-teal-600 hover:underline" onClick={() => openEdit(protocol)}>
+                        Editar
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              />
+            </div>
           </div>
         )}
       </div>
@@ -280,9 +351,51 @@ export function ProtocolsPage() {
             <Input label="Indicación" value={form.indication} onChange={(e) => setForm({ ...form, indication: e.target.value })} />
           </div>
           <Textarea label="Objetivo" value={form.objective} onChange={(e) => setForm({ ...form, objective: e.target.value })} />
+
+          <div className="rounded-2xl bg-slate-50 p-4">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
+              Parámetros según la pantalla del equipo EMT
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Input
+                label="Frecuencia (Hz)"
+                type="number"
+                value={form.frequency_hz}
+                onChange={(e) => setForm({ ...form, frequency_hz: e.target.value })}
+              />
+              <Input
+                label="Intensidad (%)"
+                type="number"
+                helper='% del umbral motor de reposo, ej. "100% MT"'
+                value={form.intensity_pct}
+                onChange={(e) => setForm({ ...form, intensity_pct: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div className="rounded-2xl bg-slate-50 p-4">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Sesiones y precio</p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Input
+                label="Sesiones recomendadas"
+                type="number"
+                min={1}
+                value={form.recommended_sessions}
+                onChange={(e) => setForm({ ...form, recommended_sessions: e.target.value })}
+              />
+              <Input
+                label="Precio por sesión (RD$)"
+                type="number"
+                min={0}
+                value={form.price}
+                onChange={(e) => setForm({ ...form, price: e.target.value })}
+              />
+            </div>
+          </div>
+
           <Textarea
-            label="Parámetros técnicos"
-            helper="Frecuencia, intensidad, trenes, pulsos, duración recomendada..."
+            label="Parámetros técnicos (notas libres)"
+            helper="Trenes, pulsos, duración recomendada u otras notas que no entran en los campos de arriba..."
             value={form.technical_parameters}
             onChange={(e) => setForm({ ...form, technical_parameters: e.target.value })}
           />

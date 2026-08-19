@@ -1977,3 +1977,46 @@ drop policy if exists patients_update_tecnico on public.patients;
 create policy patients_update_tecnico on public.patients for update
   using (public.current_app_role() = 'tecnico')
   with check (public.current_app_role() = 'tecnico');
+
+-- =====================================================================
+-- MIGRACIÓN 027 — Parámetros de referencia por protocolo (Hz, intensidad,
+-- sesiones recomendadas, precio); Categorías de protocolo y Escalas
+-- clínicas salen de Configuración y pasan a ser páginas propias del menú,
+-- visibles para todo el staff (antes solo admin/médico/técnico podían
+-- verlas). La escritura de categorías se abre a médico y técnico además
+-- de admin; la de escalas clínicas se mantiene solo admin (sin pedido de
+-- cambio para eso).
+-- Ejecutar este bloque completo en el SQL Editor de Supabase.
+-- =====================================================================
+
+alter table public.protocols add column if not exists frequency_hz numeric;
+alter table public.protocols add column if not exists intensity_pct numeric;
+alter table public.protocols add column if not exists recommended_sessions integer;
+alter table public.protocols add column if not exists price numeric;
+
+drop policy if exists protocol_categories_select on public.protocol_categories;
+create policy protocol_categories_select on public.protocol_categories for select
+  using (public.current_app_role() in ('admin', 'medico', 'tecnico', 'recepcionista', 'contable'));
+drop policy if exists protocol_categories_write on public.protocol_categories;
+create policy protocol_categories_write on public.protocol_categories for all
+  using (public.current_app_role() in ('admin', 'medico', 'tecnico'))
+  with check (public.current_app_role() in ('admin', 'medico', 'tecnico'));
+
+drop policy if exists clinical_scales_select on public.clinical_scales;
+create policy clinical_scales_select on public.clinical_scales for select
+  using (public.current_app_role() in ('admin', 'medico', 'tecnico', 'recepcionista', 'contable'));
+
+insert into public.permissions (key, label) values
+  ('protocol_categories.view', 'Ver Categorías de protocolo'),
+  ('scales.view', 'Ver Escalas clínicas')
+on conflict (key) do nothing;
+
+insert into public.role_permissions (role_code, permission_key)
+select role_code::public.app_role, permission_key from (values
+  ('admin', 'protocol_categories.view'), ('admin', 'scales.view'),
+  ('medico', 'protocol_categories.view'), ('medico', 'scales.view'),
+  ('tecnico', 'protocol_categories.view'), ('tecnico', 'scales.view'),
+  ('recepcionista', 'protocol_categories.view'), ('recepcionista', 'scales.view'),
+  ('contable', 'protocol_categories.view'), ('contable', 'scales.view')
+) as seed(role_code, permission_key)
+on conflict (role_code, permission_key) do nothing;
