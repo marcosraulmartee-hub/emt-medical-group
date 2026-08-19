@@ -19,7 +19,7 @@ export interface Protocol {
   frequency_hz: number | null
   intensity_pct: number | null
   recommended_sessions: number | null
-  sessions_per_week: number | null
+  sessions_per_week: string | null
   price: number | null
   updated_at: string
   created_at: string

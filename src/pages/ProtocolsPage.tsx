@@ -155,7 +155,7 @@ export function ProtocolsPage() {
       frequency_hz: protocol.frequency_hz != null ? String(protocol.frequency_hz) : '',
       intensity_pct: protocol.intensity_pct != null ? String(protocol.intensity_pct) : '',
       recommended_sessions: protocol.recommended_sessions != null ? String(protocol.recommended_sessions) : '',
-      sessions_per_week: protocol.sessions_per_week != null ? String(protocol.sessions_per_week) : '',
+      sessions_per_week: protocol.sessions_per_week ?? '',
       price: protocol.price != null ? String(protocol.price) : '',
       is_active: protocol.is_active,
     })
@@ -176,7 +176,7 @@ export function ProtocolsPage() {
         frequency_hz: form.frequency_hz ? Number(form.frequency_hz) : null,
         intensity_pct: form.intensity_pct ? Number(form.intensity_pct) : null,
         recommended_sessions: form.recommended_sessions ? Number(form.recommended_sessions) : null,
-        sessions_per_week: form.sessions_per_week ? Number(form.sessions_per_week) : null,
+        sessions_per_week: form.sessions_per_week.trim() ? form.sessions_per_week.trim() : null,
         price: form.price ? Number(form.price) : null,
       }
       if (editingId) {
@@ -399,9 +399,7 @@ export function ProtocolsPage() {
               />
               <Input
                 label="Sesiones por semana sugeridas (opcional)"
-                type="number"
-                min={1}
-                helper='ej. "5" para un curso agudo de lunes a viernes'
+                helper='Texto libre, ej. "5" o "5 (lunes a viernes)" o "3 a 5 según tolerancia"'
                 value={form.sessions_per_week}
                 onChange={(e) => setForm({ ...form, sessions_per_week: e.target.value })}
               />

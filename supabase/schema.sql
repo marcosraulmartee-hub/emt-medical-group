@@ -2058,3 +2058,13 @@ drop policy if exists patient_intake_submissions_update on public.patient_intake
 create policy patient_intake_submissions_update on public.patient_intake_submissions for update
   using (public.current_app_role() in ('admin', 'recepcionista'))
   with check (public.current_app_role() in ('admin', 'recepcionista'));
+
+-- =====================================================================
+-- MIGRACIÓN 031 — "Sesiones por semana sugeridas" pasa de número estricto
+-- a texto libre (ej. "5 (lunes a viernes)" o "3 a 5 según tolerancia").
+-- Sigue siendo editable solo por admin, médico y técnico — mismo acceso
+-- que el resto del protocolo, sin cambio de permisos.
+-- Ejecutar este bloque completo en el SQL Editor de Supabase.
+-- =====================================================================
+
+alter table public.protocols alter column sessions_per_week type text using sessions_per_week::text;
