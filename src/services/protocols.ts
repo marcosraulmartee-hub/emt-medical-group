@@ -18,8 +18,8 @@ export interface Protocol {
   version: string
   frequency_hz: number | null
   intensity_pct: number | null
-  duration_minutes: number | null
-  total_pulses: number | null
+  duration_minutes: string | null
+  total_pulses: string | null
   recommended_sessions: number | null
   sessions_per_week: string | null
   price: number | null

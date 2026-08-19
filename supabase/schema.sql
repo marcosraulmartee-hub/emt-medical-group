@@ -2080,3 +2080,16 @@ alter table public.protocols alter column sessions_per_week type text using sess
 
 alter table public.protocols add column if not exists duration_minutes integer;
 alter table public.protocols add column if not exists total_pulses integer;
+
+
+-- =====================================================================
+-- MIGRACIÓN 033 — "Duración (minutos)" y "Pulsos totales" pasan de número
+-- estricto a texto libre (ej. "20-30 según tolerancia" o "3000 (2 trenes
+-- de 1500)"), igual que "Sesiones por semana sugeridas". Sigue siendo
+-- editable solo por admin, médico y técnico — mismo acceso que el resto
+-- del protocolo, sin cambio de permisos.
+-- Ejecutar este bloque completo en el SQL Editor de Supabase.
+-- =====================================================================
+
+alter table public.protocols alter column duration_minutes type text using duration_minutes::text;
+alter table public.protocols alter column total_pulses type text using total_pulses::text;

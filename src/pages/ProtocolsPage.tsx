@@ -158,8 +158,8 @@ export function ProtocolsPage() {
       version: protocol.version ?? '1.0',
       frequency_hz: protocol.frequency_hz != null ? String(protocol.frequency_hz) : '',
       intensity_pct: protocol.intensity_pct != null ? String(protocol.intensity_pct) : '',
-      duration_minutes: protocol.duration_minutes != null ? String(protocol.duration_minutes) : '',
-      total_pulses: protocol.total_pulses != null ? String(protocol.total_pulses) : '',
+      duration_minutes: protocol.duration_minutes ?? '',
+      total_pulses: protocol.total_pulses ?? '',
       recommended_sessions: protocol.recommended_sessions != null ? String(protocol.recommended_sessions) : '',
       sessions_per_week: protocol.sessions_per_week ?? '',
       price: protocol.price != null ? String(protocol.price) : '',
@@ -181,8 +181,8 @@ export function ProtocolsPage() {
         ...form,
         frequency_hz: form.frequency_hz ? Number(form.frequency_hz) : null,
         intensity_pct: form.intensity_pct ? Number(form.intensity_pct) : null,
-        duration_minutes: form.duration_minutes ? Number(form.duration_minutes) : null,
-        total_pulses: form.total_pulses ? Number(form.total_pulses) : null,
+        duration_minutes: form.duration_minutes.trim() ? form.duration_minutes.trim() : null,
+        total_pulses: form.total_pulses.trim() ? form.total_pulses.trim() : null,
         recommended_sessions: form.recommended_sessions ? Number(form.recommended_sessions) : null,
         sessions_per_week: form.sessions_per_week.trim() ? form.sessions_per_week.trim() : null,
         price: form.price ? Number(form.price) : null,
@@ -398,15 +398,13 @@ export function ProtocolsPage() {
               />
               <Input
                 label="Duración (minutos)"
-                type="number"
-                min={0}
+                helper='Texto libre, ej. "20" o "20-30 según tolerancia"'
                 value={form.duration_minutes}
                 onChange={(e) => setForm({ ...form, duration_minutes: e.target.value })}
               />
               <Input
                 label="Pulsos totales"
-                type="number"
-                min={0}
+                helper='Texto libre, ej. "1200" o "3000 (2 trenes de 1500)"'
                 value={form.total_pulses}
                 onChange={(e) => setForm({ ...form, total_pulses: e.target.value })}
               />
