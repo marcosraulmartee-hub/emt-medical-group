@@ -2127,3 +2127,15 @@ create policy patients_update_general on public.patients for update
 drop policy if exists patients_delete on public.patients;
 create policy patients_delete on public.patients for delete
   using (public.current_app_role() = 'admin');
+
+
+-- =====================================================================
+-- MIGRACIÓN 035 — "Frecuencia (Hz)" y "Duración (minutos)" en el
+-- registro de sesiones pasan de número estricto a texto libre, igual
+-- que los mismos campos en protocolos (ej. "10 (tren)" o "20-30 según
+-- tolerancia"). Sin cambio de permisos.
+-- Ejecutar este bloque completo en el SQL Editor de Supabase.
+-- =====================================================================
+
+alter table public.emt_sessions alter column frequency_hz type text using frequency_hz::text;
+alter table public.emt_sessions alter column duration_minutes type text using duration_minutes::text;

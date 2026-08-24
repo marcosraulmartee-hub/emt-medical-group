@@ -88,9 +88,7 @@ export function SessionParametersFields({
       <div className="grid gap-4 sm:grid-cols-3">
         <Input
           label="Frecuencia (Hz)"
-          type="number"
-          max={100}
-          helper="Neuro-MSX SLIM: hasta 100 Hz"
+          helper='Texto libre, ej. "10" o "10 (tren)" — Neuro-MSX SLIM: hasta 100 Hz'
           value={values.frequency_hz}
           onChange={(e) => onChange({ frequency_hz: e.target.value })}
         />
@@ -138,7 +136,7 @@ export function SessionParametersFields({
       </div>
       <Input
         label="Duración (minutos)"
-        type="number"
+        helper='Texto libre, ej. "20" o "20-30 según tolerancia"'
         value={values.duration_minutes}
         onChange={(e) => onChange({ duration_minutes: e.target.value })}
       />

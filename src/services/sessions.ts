@@ -16,13 +16,13 @@ export interface SessionRecord {
   stimulated_region: string
   laterality: string
   protocol_id: string
-  frequency_hz: number | null
+  frequency_hz: string | null
   intensity_pct: number | null
   rmt_pct: number | null
   motor_threshold: number | null
   pulses: number | null
   trains: number | null
-  duration_minutes: number | null
+  duration_minutes: string | null
   clinical_response: string
   adverse_events: string
   notes: string
