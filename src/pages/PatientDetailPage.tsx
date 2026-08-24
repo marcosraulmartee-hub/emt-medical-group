@@ -4,8 +4,11 @@ import { ArrowLeft } from 'lucide-react'
 import { AppShell } from '../components/layout/AppShell'
 import { Alert } from '../components/ui/Alert'
 import { Spinner } from '../components/ui/Spinner'
+import { Button } from '../components/ui/Button'
+import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import type { Patient } from '../services/patients'
-import { getPatient } from '../services/patients'
+import { deletePatient, getPatient } from '../services/patients'
+import { useAuth } from '../hooks/useAuth'
 import { GeneralInfoSection } from './patient-detail/GeneralInfoSection'
 import { DiagnosesSection } from './patient-detail/DiagnosesSection'
 import { MedicationsSection } from './patient-detail/MedicationsSection'
@@ -36,10 +39,14 @@ type TabKey = (typeof TABS)[number]['key']
 export function PatientDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { profile } = useAuth()
   const [patient, setPatient] = useState<Patient | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [tab, setTab] = useState<TabKey>('general')
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
 
   useEffect(() => {
     if (!id) return
@@ -49,6 +56,20 @@ export function PatientDetailPage() {
       .catch(() => setError('No se pudo cargar el paciente.'))
       .finally(() => setLoading(false))
   }, [id])
+
+  async function handleDelete() {
+    if (!patient) return
+    setDeleting(true)
+    setDeleteError('')
+    try {
+      await deletePatient(patient.id)
+      navigate('/patients')
+    } catch {
+      setDeleteError('No se pudo eliminar el paciente.')
+      setDeleting(false)
+      setDeleteConfirmOpen(false)
+    }
+  }
 
   return (
     <AppShell title="Ficha del paciente">
@@ -68,10 +89,19 @@ export function PatientDetailPage() {
           <Alert variant="error">{error || 'Paciente no encontrado.'}</Alert>
         ) : (
           <>
-            <div>
-              <h2 className="text-xl font-semibold text-midnight-950">{patient.full_name}</h2>
-              <p className="text-sm text-slate-500">Ficha clínica y administrativa</p>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 className="text-xl font-semibold text-midnight-950">{patient.full_name}</h2>
+                <p className="text-sm text-slate-500">Ficha clínica y administrativa</p>
+              </div>
+              {profile?.role === 'admin' && (
+                <Button size="sm" variant="danger" onClick={() => setDeleteConfirmOpen(true)}>
+                  Eliminar paciente
+                </Button>
+              )}
             </div>
+
+            {deleteError && <Alert variant="error">{deleteError}</Alert>}
 
             <DischargeControl patient={patient} onUpdated={setPatient} />
 
@@ -103,6 +133,17 @@ export function PatientDetailPage() {
           </>
         )}
       </div>
+
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        title="Eliminar paciente"
+        message="Se elimina por completo la ficha de este paciente, incluyendo su historial clínico y administrativo asociado. No se puede deshacer."
+        confirmLabel="Eliminar"
+        danger
+        loading={deleting}
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteConfirmOpen(false)}
+      />
     </AppShell>
   )
 }

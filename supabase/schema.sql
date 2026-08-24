@@ -2093,3 +2093,37 @@ alter table public.protocols add column if not exists total_pulses integer;
 
 alter table public.protocols alter column duration_minutes type text using duration_minutes::text;
 alter table public.protocols alter column total_pulses type text using total_pulses::text;
+
+
+-- =====================================================================
+-- MIGRACIÓN 034 — Botón "Eliminar" en Facturas (borradores) y Pacientes,
+-- ahora reservado exclusivamente al rol admin. Antes, borrar una factura
+-- en borrador también estaba permitido a recepcionista, y borrar un
+-- paciente también estaba permitido a médico y recepcionista (sin botón
+-- en la UI todavía). Se separa "delete" del resto de permisos para poder
+-- restringirlo aparte.
+-- Ejecutar este bloque completo en el SQL Editor de Supabase.
+-- =====================================================================
+
+drop policy if exists invoices_delete on public.invoices;
+create policy invoices_delete on public.invoices for delete
+  using (public.current_app_role() = 'admin' and status = 'draft');
+
+drop policy if exists patients_all on public.patients;
+
+drop policy if exists patients_select_general on public.patients;
+create policy patients_select_general on public.patients for select
+  using (public.current_app_role() in ('admin', 'medico', 'recepcionista'));
+
+drop policy if exists patients_insert_general on public.patients;
+create policy patients_insert_general on public.patients for insert
+  with check (public.current_app_role() in ('admin', 'medico', 'recepcionista'));
+
+drop policy if exists patients_update_general on public.patients;
+create policy patients_update_general on public.patients for update
+  using (public.current_app_role() in ('admin', 'medico', 'recepcionista'))
+  with check (public.current_app_role() in ('admin', 'medico', 'recepcionista'));
+
+drop policy if exists patients_delete on public.patients;
+create policy patients_delete on public.patients for delete
+  using (public.current_app_role() = 'admin');

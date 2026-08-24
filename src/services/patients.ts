@@ -78,6 +78,12 @@ export async function dischargePatient(id: string, notes: string) {
   return data as Patient
 }
 
+export async function deletePatient(id: string) {
+  const { error } = await supabase.from('patients').delete().eq('id', id)
+  if (error) throw error
+  void logAudit('delete', 'patient', id, {})
+}
+
 export async function reactivatePatient(id: string) {
   const { data, error } = await supabase
     .from('patients')

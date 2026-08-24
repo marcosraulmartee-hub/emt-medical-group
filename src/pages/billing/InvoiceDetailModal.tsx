@@ -10,6 +10,7 @@ import type { Invoice, InvoiceItem, InvoiceStatus } from '../../services/invoice
 import { deleteDraftInvoice, issueInvoice, listInvoiceItems, voidInvoice } from '../../services/invoices'
 import type { Payment } from '../../services/payments'
 import { addPayment, listPaymentsForInvoice } from '../../services/payments'
+import { useAuth } from '../../hooks/useAuth'
 
 const STATUS_LABEL: Record<InvoiceStatus, string> = {
   draft: 'Borrador',
@@ -32,6 +33,7 @@ export function InvoiceDetailModal({
   onClose: () => void
   onChanged: () => void
 }) {
+  const { profile } = useAuth()
   const [items, setItems] = useState<InvoiceItem[]>([])
   const [payments, setPayments] = useState<Payment[]>([])
   const [loading, setLoading] = useState(true)
@@ -207,9 +209,11 @@ export function InvoiceDetailModal({
             <Button onClick={handleIssue} loading={issuing}>
               Emitir factura
             </Button>
-            <Button variant="danger" onClick={() => setDeleteConfirmOpen(true)} loading={deleting}>
-              Eliminar borrador
-            </Button>
+            {profile?.role === 'admin' && (
+              <Button variant="danger" onClick={() => setDeleteConfirmOpen(true)} loading={deleting}>
+                Eliminar borrador
+              </Button>
+            )}
           </div>
         )}
 
