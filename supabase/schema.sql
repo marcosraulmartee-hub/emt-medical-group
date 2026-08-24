@@ -2142,3 +2142,14 @@ create policy patients_delete on public.patients for delete
 alter table public.emt_sessions drop constraint if exists emt_sessions_frequency_hz_range;
 alter table public.emt_sessions alter column frequency_hz type text using frequency_hz::text;
 alter table public.emt_sessions alter column duration_minutes type text using duration_minutes::text;
+
+
+-- =====================================================================
+-- MIGRACIÓN 036 — "Frecuencia (Hz)" en protocolos pasa de número
+-- estricto a texto libre, igual que el resto de parámetros de pantalla
+-- del equipo EMT (duración, pulsos totales) y que el mismo campo en
+-- sesiones. Sin cambio de permisos.
+-- Ejecutar este bloque completo en el SQL Editor de Supabase.
+-- =====================================================================
+
+alter table public.protocols alter column frequency_hz type text using frequency_hz::text;

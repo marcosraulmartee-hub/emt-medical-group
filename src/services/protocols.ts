@@ -16,7 +16,7 @@ export interface Protocol {
   clinical_guidelines: string
   regulatory_body: string
   version: string
-  frequency_hz: number | null
+  frequency_hz: string | null
   intensity_pct: number | null
   duration_minutes: string | null
   total_pulses: string | null

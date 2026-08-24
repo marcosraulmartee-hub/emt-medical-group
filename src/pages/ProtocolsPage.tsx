@@ -156,7 +156,7 @@ export function ProtocolsPage() {
       clinical_guidelines: protocol.clinical_guidelines ?? '',
       regulatory_body: protocol.regulatory_body ?? '',
       version: protocol.version ?? '1.0',
-      frequency_hz: protocol.frequency_hz != null ? String(protocol.frequency_hz) : '',
+      frequency_hz: protocol.frequency_hz ?? '',
       intensity_pct: protocol.intensity_pct != null ? String(protocol.intensity_pct) : '',
       duration_minutes: protocol.duration_minutes ?? '',
       total_pulses: protocol.total_pulses ?? '',
@@ -179,7 +179,7 @@ export function ProtocolsPage() {
     try {
       const payload = {
         ...form,
-        frequency_hz: form.frequency_hz ? Number(form.frequency_hz) : null,
+        frequency_hz: form.frequency_hz.trim() ? form.frequency_hz.trim() : null,
         intensity_pct: form.intensity_pct ? Number(form.intensity_pct) : null,
         duration_minutes: form.duration_minutes.trim() ? form.duration_minutes.trim() : null,
         total_pulses: form.total_pulses.trim() ? form.total_pulses.trim() : null,
@@ -385,7 +385,7 @@ export function ProtocolsPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <Input
                 label="Frecuencia (Hz)"
-                type="number"
+                helper='Texto libre, ej. "10" o "10 (tren)"'
                 value={form.frequency_hz}
                 onChange={(e) => setForm({ ...form, frequency_hz: e.target.value })}
               />
