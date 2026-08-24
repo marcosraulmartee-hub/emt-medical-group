@@ -2133,9 +2133,12 @@ create policy patients_delete on public.patients for delete
 -- MIGRACIÓN 035 — "Frecuencia (Hz)" y "Duración (minutos)" en el
 -- registro de sesiones pasan de número estricto a texto libre, igual
 -- que los mismos campos en protocolos (ej. "10 (tren)" o "20-30 según
--- tolerancia"). Sin cambio de permisos.
+-- tolerancia"). Se elimina el límite de base de datos de 0-100 Hz (queda
+-- solo como advertencia en el formulario, no como bloqueo estricto, ya
+-- que el campo admite texto). Sin cambio de permisos.
 -- Ejecutar este bloque completo en el SQL Editor de Supabase.
 -- =====================================================================
 
+alter table public.emt_sessions drop constraint if exists emt_sessions_frequency_hz_range;
 alter table public.emt_sessions alter column frequency_hz type text using frequency_hz::text;
 alter table public.emt_sessions alter column duration_minutes type text using duration_minutes::text;
