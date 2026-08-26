@@ -3,6 +3,7 @@ import { Menu, Search } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { formatLongDate, initials } from '../../utils/format'
+import { NotificationBell } from './NotificationBell'
 
 interface NavbarProps {
   title: string
@@ -51,6 +52,8 @@ export function Navbar({ title, onOpenSidebar }: NavbarProps) {
           />
         </div>
       </form>
+
+      <NotificationBell />
 
       <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-900 text-sm font-semibold text-white">
         {initials(profile?.full_name || user?.email || 'U')}

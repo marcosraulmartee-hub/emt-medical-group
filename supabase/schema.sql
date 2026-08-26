@@ -2153,3 +2153,18 @@ alter table public.emt_sessions alter column duration_minutes type text using du
 -- =====================================================================
 
 alter table public.protocols alter column frequency_hz type text using frequency_hz::text;
+
+
+-- =====================================================================
+-- MIGRACIÓN 037 — Icono de notificaciones en la barra superior, visible
+-- para todos los roles, que avisa cuando un paciente llena el Google
+-- Form vinculado a la app. Antes solo admin y recepcionista podían ver
+-- los envíos (patient_intake_submissions); ahora todos los roles del
+-- staff pueden verlos para la notificación, pero solo admin y
+-- recepcionista pueden marcarlos como revisados (sin cambios ahí).
+-- Ejecutar este bloque completo en el SQL Editor de Supabase.
+-- =====================================================================
+
+drop policy if exists patient_intake_submissions_select on public.patient_intake_submissions;
+create policy patient_intake_submissions_select on public.patient_intake_submissions for select
+  using (public.current_app_role() in ('admin', 'medico', 'tecnico', 'recepcionista', 'contable'));
