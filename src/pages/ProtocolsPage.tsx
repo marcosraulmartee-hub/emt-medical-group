@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { ChevronDown, ChevronUp } from 'lucide-react'
 import { AppShell } from '../components/layout/AppShell'
 import { Button } from '../components/ui/Button'
 import { Table } from '../components/ui/Table'
@@ -40,6 +41,43 @@ const emptyForm = {
 
 type Tab = 'list' | 'pricing'
 
+function ProtocolDetail({ protocol }: { protocol: Protocol }) {
+  const allFields: Array<[string, string | number | null]> = [
+    ['Indicación', protocol.indication],
+    ['Objetivo', protocol.objective],
+    ['Frecuencia (Hz)', protocol.frequency_hz],
+    ['Intensidad (%)', protocol.intensity_pct],
+    ['Duración (minutos)', protocol.duration_minutes],
+    ['Pulsos totales', protocol.total_pulses],
+    ['Sesiones por semana sugeridas', protocol.sessions_per_week],
+    ['Precio por sesión (RD$)', protocol.price != null ? `RD$ ${protocol.price.toLocaleString('es-DO')}` : null],
+    ['Parámetros técnicos', protocol.technical_parameters],
+    ['Contraindicaciones', protocol.contraindications],
+    ['Precauciones', protocol.precautions],
+    ['Eventos adversos esperables', protocol.adverse_events],
+    ['Nivel de evidencia', protocol.evidence_level],
+    ['Organismo regulador', protocol.regulatory_body],
+    ['Guías clínicas', protocol.clinical_guidelines],
+    ['Bibliografía', protocol.bibliography],
+  ]
+  const fields = allFields.filter(([, value]) => value !== null && value !== '')
+
+  if (fields.length === 0) {
+    return <p className="text-sm text-slate-400">Este protocolo no tiene más detalles cargados.</p>
+  }
+
+  return (
+    <div className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+      {fields.map(([label, value]) => (
+        <div key={label}>
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{label}</p>
+          <p className="whitespace-pre-wrap text-sm text-slate-700">{value}</p>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export function ProtocolsPage() {
   const [tab, setTab] = useState<Tab>('list')
   const [protocols, setProtocols] = useState<Protocol[]>([])
@@ -54,6 +92,7 @@ export function ProtocolsPage() {
   const [formError, setFormError] = useState('')
   const [exportingExcel, setExportingExcel] = useState(false)
   const [exportError, setExportError] = useState('')
+  const [expandedId, setExpandedId] = useState<string | null>(null)
 
   async function load() {
     setLoading(true)
@@ -130,6 +169,10 @@ export function ProtocolsPage() {
     } finally {
       setExportingExcel(false)
     }
+  }
+
+  function toggleExpand(id: string) {
+    setExpandedId((prev) => (prev === id ? null : id))
   }
 
   function openCreate() {
@@ -272,25 +315,51 @@ export function ProtocolsPage() {
                 </div>
                 <div className="overflow-x-auto">
                   <Table
-                    headers={['Nombre', 'Diagnóstico', 'Sesiones', 'Versión', 'Estado', '']}
-                    rows={group.protocols.map((protocol) => (
-                      <tr key={protocol.id} className="hover:bg-slate-50">
-                        <td className="px-4 py-4 text-slate-700">{protocol.name}</td>
-                        <td className="px-4 py-4 text-slate-500">{protocol.diagnosis || '—'}</td>
-                        <td className="px-4 py-4 text-slate-500">{protocol.recommended_sessions ?? '—'}</td>
-                        <td className="px-4 py-4 text-slate-500">{protocol.version}</td>
-                        <td className="px-4 py-4">
-                          <Badge tone={protocol.is_active ? 'success' : 'neutral'}>
-                            {protocol.is_active ? 'Activo' : 'Inactivo'}
-                          </Badge>
-                        </td>
-                        <td className="px-4 py-4 text-right">
-                          <button className="text-sm text-teal-600 hover:underline" onClick={() => openEdit(protocol)}>
-                            Editar
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                    headers={['', 'Nombre', 'Diagnóstico', 'Sesiones', 'Versión', 'Estado', '']}
+                    rows={group.protocols.flatMap((protocol) => {
+                      const expanded = expandedId === protocol.id
+                      const rows = [
+                        <tr
+                          key={protocol.id}
+                          className="cursor-pointer hover:bg-slate-50"
+                          onClick={() => toggleExpand(protocol.id)}
+                        >
+                          <td className="px-4 py-4 text-slate-400">
+                            {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                          </td>
+                          <td className="px-4 py-4 text-slate-700">{protocol.name}</td>
+                          <td className="px-4 py-4 text-slate-500">{protocol.diagnosis || '—'}</td>
+                          <td className="px-4 py-4 text-slate-500">{protocol.recommended_sessions ?? '—'}</td>
+                          <td className="px-4 py-4 text-slate-500">{protocol.version}</td>
+                          <td className="px-4 py-4">
+                            <Badge tone={protocol.is_active ? 'success' : 'neutral'}>
+                              {protocol.is_active ? 'Activo' : 'Inactivo'}
+                            </Badge>
+                          </td>
+                          <td className="px-4 py-4 text-right">
+                            <button
+                              className="text-sm text-teal-600 hover:underline"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                openEdit(protocol)
+                              }}
+                            >
+                              Editar
+                            </button>
+                          </td>
+                        </tr>,
+                      ]
+                      if (expanded) {
+                        rows.push(
+                          <tr key={`${protocol.id}-detail`} className="bg-slate-50/60">
+                            <td colSpan={7} className="px-4 py-4">
+                              <ProtocolDetail protocol={protocol} />
+                            </td>
+                          </tr>,
+                        )
+                      }
+                      return rows
+                    })}
                   />
                 </div>
               </div>

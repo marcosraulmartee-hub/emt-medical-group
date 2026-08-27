@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
+import { Select } from '../../components/ui/Select'
 import { Alert } from '../../components/ui/Alert'
 import { Table } from '../../components/ui/Table'
 import { Badge } from '../../components/ui/Badge'
 import { getSetting, setSetting } from '../../services/clinicSettings'
 import type { IntakeSubmission } from '../../services/patientIntake'
 import { listIntakeSubmissions, markIntakeSubmissionReviewed } from '../../services/patientIntake'
+import { getNotificationRetention, setNotificationRetention, type NotificationRetention } from '../../services/notificationSettings'
 
 function FormUrlSettings() {
   const [url, setUrl] = useState('')
@@ -58,6 +60,63 @@ function FormUrlSettings() {
       <Button size="sm" onClick={handleSave} loading={saving}>
         Guardar
       </Button>
+    </div>
+  )
+}
+
+function NotificationRetentionSettings() {
+  const [retention, setRetention] = useState<NotificationRetention>('never')
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    getNotificationRetention()
+      .then(setRetention)
+      .catch(() => setError('No se pudo cargar la configuración de notificaciones.'))
+      .finally(() => setLoading(false))
+  }, [])
+
+  async function handleChange(value: NotificationRetention) {
+    setRetention(value)
+    setSaving(true)
+    setSaved(false)
+    setError('')
+    try {
+      await setNotificationRetention(value)
+      setSaved(true)
+    } catch {
+      setError('No se pudo guardar la configuración de notificaciones.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (loading) return <p className="text-sm text-slate-500">Cargando...</p>
+
+  return (
+    <div className="space-y-4 rounded-3xl bg-white p-6 shadow-card">
+      <div>
+        <h3 className="text-base font-semibold text-midnight-950">Notificaciones</h3>
+        <p className="text-sm text-slate-500">
+          Cuánto tiempo se mantiene visible en la campanita un registro nuevo antes de ocultarse automáticamente. Un envío
+          sigue apareciendo en "Envíos recibidos" y cuenta como pendiente hasta que se marque como revisado, sin importar
+          esta configuración.
+        </p>
+      </div>
+      {error && <Alert variant="error">{error}</Alert>}
+      {saved && !saving && <Alert variant="success">Guardado.</Alert>}
+      <Select
+        label="Mantener notificaciones por"
+        value={retention}
+        onChange={(e) => handleChange(e.target.value as NotificationRetention)}
+        disabled={saving}
+      >
+        <option value="24h">24 horas</option>
+        <option value="7d">7 días</option>
+        <option value="never">No quitarlas nunca</option>
+      </Select>
     </div>
   )
 }
@@ -140,6 +199,7 @@ export function IntakeFormSection() {
   return (
     <div className="space-y-6">
       <FormUrlSettings />
+      <NotificationRetentionSettings />
       <SubmissionsLog />
     </div>
   )
