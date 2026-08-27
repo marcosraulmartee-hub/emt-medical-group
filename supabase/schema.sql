@@ -2168,3 +2168,18 @@ alter table public.protocols alter column frequency_hz type text using frequency
 drop policy if exists patient_intake_submissions_select on public.patient_intake_submissions;
 create policy patient_intake_submissions_select on public.patient_intake_submissions for select
   using (public.current_app_role() in ('admin', 'medico', 'tecnico', 'recepcionista', 'contable'));
+
+
+-- =====================================================================
+-- MIGRACIÓN 038 — Recepcionista ahora puede VER la Biblioteca de
+-- Protocolos y la pestaña "Precios y sesiones" (antes no tenía acceso a
+-- esa página en el menú, aunque a nivel de base ya podía leer protocolos
+-- para agendar citas). Sigue sin poder crear ni editar protocolos — esa
+-- escritura queda reservada a admin, médico y técnico (protocols_write,
+-- sin cambios).
+-- Ejecutar este bloque completo en el SQL Editor de Supabase.
+-- =====================================================================
+
+insert into public.role_permissions (role_code, permission_key)
+values ('recepcionista', 'protocols.view')
+on conflict (role_code, permission_key) do nothing;

@@ -13,6 +13,7 @@ import type { Protocol } from '../services/protocols'
 import { createProtocol, listProtocols, updateProtocol } from '../services/protocols'
 import type { ProtocolCategory } from '../services/protocolCategories'
 import { listProtocolCategories } from '../services/protocolCategories'
+import { useAuth } from '../hooks/useAuth'
 
 const emptyForm = {
   name: '',
@@ -79,6 +80,8 @@ function ProtocolDetail({ protocol }: { protocol: Protocol }) {
 }
 
 export function ProtocolsPage() {
+  const { profile } = useAuth()
+  const canEdit = profile?.role === 'admin' || profile?.role === 'medico' || profile?.role === 'tecnico'
   const [tab, setTab] = useState<Tab>('list')
   const [protocols, setProtocols] = useState<Protocol[]>([])
   const [categories, setCategories] = useState<ProtocolCategory[]>([])
@@ -256,7 +259,7 @@ export function ProtocolsPage() {
             <Button variant="secondary" onClick={handleExportExcel} loading={exportingExcel} disabled={filtered.length === 0}>
               Exportar Excel
             </Button>
-            <Button onClick={openCreate}>Nuevo protocolo</Button>
+            {canEdit && <Button onClick={openCreate}>Nuevo protocolo</Button>}
           </div>
         </div>
 
@@ -337,15 +340,17 @@ export function ProtocolsPage() {
                             </Badge>
                           </td>
                           <td className="px-4 py-4 text-right">
-                            <button
-                              className="text-sm text-teal-600 hover:underline"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                openEdit(protocol)
-                              }}
-                            >
-                              Editar
-                            </button>
+                            {canEdit && (
+                              <button
+                                className="text-sm text-teal-600 hover:underline"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  openEdit(protocol)
+                                }}
+                              >
+                                Editar
+                              </button>
+                            )}
                           </td>
                         </tr>,
                       ]
@@ -372,32 +377,34 @@ export function ProtocolsPage() {
                 headers={[
                   'Nombre',
                   'Categoría',
+                  'Precio (RD$)',
                   'Sesiones recomendadas',
                   'Sesiones/semana',
                   'Frecuencia (Hz)',
                   'Intensidad (%)',
                   'Duración (min)',
                   'Pulsos totales',
-                  'Precio (RD$)',
                   '',
                 ]}
                 rows={sortedForPricing.map((protocol) => (
                   <tr key={protocol.id} className="hover:bg-slate-50">
                     <td className="px-4 py-4 text-slate-700">{protocol.name}</td>
                     <td className="px-4 py-4 text-slate-500">{categoryLabel(protocol.category)}</td>
+                    <td className="px-4 py-4 font-medium text-midnight-950">
+                      {protocol.price != null ? `RD$ ${protocol.price.toLocaleString('es-DO')}` : '—'}
+                    </td>
                     <td className="px-4 py-4 text-slate-500">{protocol.recommended_sessions ?? '—'}</td>
                     <td className="px-4 py-4 text-slate-500">{protocol.sessions_per_week ?? '—'}</td>
                     <td className="px-4 py-4 text-slate-500">{protocol.frequency_hz ?? '—'}</td>
                     <td className="px-4 py-4 text-slate-500">{protocol.intensity_pct ?? '—'}</td>
                     <td className="px-4 py-4 text-slate-500">{protocol.duration_minutes ?? '—'}</td>
                     <td className="px-4 py-4 text-slate-500">{protocol.total_pulses ?? '—'}</td>
-                    <td className="px-4 py-4 text-slate-500">
-                      {protocol.price != null ? `RD$ ${protocol.price.toLocaleString('es-DO')}` : '—'}
-                    </td>
                     <td className="px-4 py-4 text-right">
-                      <button className="text-sm text-teal-600 hover:underline" onClick={() => openEdit(protocol)}>
-                        Editar
-                      </button>
+                      {canEdit && (
+                        <button className="text-sm text-teal-600 hover:underline" onClick={() => openEdit(protocol)}>
+                          Editar
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

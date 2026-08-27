@@ -42,6 +42,7 @@ export const ROLE_MATRIX: Record<string, string[]> = {
     'dashboard.view',
     'agenda.view',
     'patients.view',
+    'protocols.view',
     'protocol_categories.view',
     'consents.view',
     'scales.view',
